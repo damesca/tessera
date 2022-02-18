@@ -24,6 +24,8 @@ public interface SendRequest {
 
   Set<PublicKey> getMandatoryRecipients();
 
+  //byte[] getPrivateData();
+
   class Builder {
 
     private PublicKey from;
@@ -41,6 +43,8 @@ public interface SendRequest {
     private PrivacyGroup.Id privacyGroupId;
 
     private Set<PublicKey> mandatoryRecipients = Collections.emptySet();
+
+    //private byte[] privateData;
 
     public static Builder create() {
       return new Builder() {};
@@ -85,6 +89,11 @@ public interface SendRequest {
       this.mandatoryRecipients = mandatoryRecipients;
       return this;
     }
+
+    /*public Builder withPrivateData(byte[] privateData) {
+      this.privateData = privateData;
+      return this;
+    }*/
 
     public SendRequest build() {
 
@@ -147,6 +156,11 @@ public interface SendRequest {
         public Set<PublicKey> getMandatoryRecipients() {
           return Set.copyOf(mandatoryRecipients);
         }
+
+        /*@Override
+        public byte[] getPrivateData() {
+          return Arrays.copyOf(privateData, privateData.length);
+        }*/
       };
     }
   }

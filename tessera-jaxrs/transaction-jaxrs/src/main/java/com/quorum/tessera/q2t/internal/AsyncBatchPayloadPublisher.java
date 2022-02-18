@@ -44,6 +44,7 @@ public class AsyncBatchPayloadPublisher implements BatchPayloadPublisher {
    */
   @Override
   public void publishPayload(EncodedPayload payload, List<PublicKey> recipientKeys) {
+    /*LOG*/System.out.println("\n[AsyncBatchPayloadPublisher] publishPayload()\n");
     if (recipientKeys.size() == 0) {
       return;
     }

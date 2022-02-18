@@ -41,6 +41,7 @@ public class RestPayloadPublisher implements PayloadPublisher {
   @Override
   public void publishPayload(EncodedPayload payload, PublicKey recipientKey) {
 
+    /*LOG*/System.out.printf("\n[RestPayloadPublisher] publishPayload\n");
     final NodeInfo remoteNodeInfo = discovery.getRemoteNodeInfo(recipientKey);
     final Set<String> supportedApiVersions = remoteNodeInfo.supportedApiVersions();
     final EncodedPayloadCodec preferredCodec =

@@ -96,6 +96,9 @@ public class BesuTransactionResource {
 
     final PrivacyMode privacyMode = PrivacyMode.fromFlag(sendRequest.getPrivacyFlag());
 
+    final byte[] privateData = sendRequest.getPrivateData();
+    LOGGER.info("Private Data: {}", privateData);
+
     final com.quorum.tessera.transaction.SendRequest.Builder requestBuilder =
         com.quorum.tessera.transaction.SendRequest.Builder.create()
             .withRecipients(recipientList)
@@ -104,6 +107,7 @@ public class BesuTransactionResource {
             .withExecHash(execHash)
             .withPrivacyMode(privacyMode)
             .withAffectedContractTransactions(affectedTransactions);
+            //.withPrivateData(sendRequest.getPrivateData());
 
     optionalPrivacyGroup.ifPresentOrElse(
         requestBuilder::withPrivacyGroupId,
@@ -113,6 +117,8 @@ public class BesuTransactionResource {
           requestBuilder.withPrivacyGroupId(legacyGroup.getId());
         });
 
+    LOGGER.info("sendRequest.getPayload(): {}", sendRequest.getPayload());
+    LOGGER.info("PAYLOAD-LENGTH: {}", sendRequest.getPayload().length);
     final com.quorum.tessera.transaction.SendResponse response =
         transactionManager.send(requestBuilder.build());
 
