@@ -9,7 +9,9 @@ import com.quorum.tessera.enclave.PrivacyGroup;
 import com.quorum.tessera.enclave.PrivacyMode;
 import com.quorum.tessera.encryption.PublicKey;
 import com.quorum.tessera.privacygroup.PrivacyGroupManager;
+import com.quorum.tessera.transaction.PrivateTransaction;
 import com.quorum.tessera.transaction.TransactionManager;
+import com.quorum.tessera.q2t.internal.PrivateDataHandler;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -63,6 +65,9 @@ public class BesuTransactionResource {
   @Produces(APPLICATION_JSON)
   public Response send(@NotNull @Valid @PrivacyValid final SendRequest sendRequest) {
 
+    /*LOG*/System.out.println("[BesuTransactionResource] send()");
+    PrivateTransaction.bytes();
+
     final PublicKey sender =
         Optional.ofNullable(sendRequest.getFrom())
             .map(base64Decoder::decode)
@@ -96,8 +101,10 @@ public class BesuTransactionResource {
 
     final PrivacyMode privacyMode = PrivacyMode.fromFlag(sendRequest.getPrivacyFlag());
 
-    final byte[] privateData = sendRequest.getPrivateData();
-    LOGGER.info("Private Data: {}", privateData);
+    // DONE: private data is managed here
+    final PrivateDataHandler privateData = new PrivateDataHandler(sendRequest.getPrivateData());
+    // TODO: save privateData somewhere
+    // TODO: run a listener point for OT
 
     final com.quorum.tessera.transaction.SendRequest.Builder requestBuilder =
         com.quorum.tessera.transaction.SendRequest.Builder.create()
@@ -107,7 +114,6 @@ public class BesuTransactionResource {
             .withExecHash(execHash)
             .withPrivacyMode(privacyMode)
             .withAffectedContractTransactions(affectedTransactions);
-            //.withPrivateData(sendRequest.getPrivateData());
 
     optionalPrivacyGroup.ifPresentOrElse(
         requestBuilder::withPrivacyGroupId,
@@ -117,7 +123,13 @@ public class BesuTransactionResource {
           requestBuilder.withPrivacyGroupId(legacyGroup.getId());
         });
 
-    LOGGER.info("sendRequest.getPayload(): {}", sendRequest.getPayload());
+    final byte[] tmp = base64Decoder.decode(sendRequest.getPayload());
+    StringBuilder payload = new StringBuilder();
+    for (byte aByte : tmp) {
+        payload.append(String.format("%02x", aByte));
+    }
+
+    LOGGER.info("sendRequest.getPayload(): {}", payload.toString());
     LOGGER.info("PAYLOAD-LENGTH: {}", sendRequest.getPayload().length);
     final com.quorum.tessera.transaction.SendResponse response =
         transactionManager.send(requestBuilder.build());

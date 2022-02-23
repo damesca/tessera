@@ -212,6 +212,7 @@ public class TransactionManagerImpl implements TransactionManager {
   @Override
   public synchronized MessageHash storePayload(final EncodedPayload payload) {
 
+    LOGGER.info("\n[TransactionManagerImpl] storePayload(payload)\n");
     final byte[] digest = payloadDigest.digest(payload.getCipherText());
     final MessageHash transactionHash = new MessageHash(digest);
     final List<AffectedTransaction> affectedContractTransactions =

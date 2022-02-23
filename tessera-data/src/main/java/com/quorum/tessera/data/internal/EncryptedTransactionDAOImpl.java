@@ -28,6 +28,7 @@ public class EncryptedTransactionDAOImpl implements EncryptedTransactionDAO {
 
   @Override
   public EncryptedTransaction save(final EncryptedTransaction entity) {
+    LOGGER.info("\n[EncryptedTransactionDAOImpl] save(entity)\n");
     return entityManagerTemplate.execute(
         entityManager -> {
           entityManager.persist(entity);
@@ -113,7 +114,7 @@ public class EncryptedTransactionDAOImpl implements EncryptedTransactionDAO {
 
   @Override
   public <T> EncryptedTransaction save(EncryptedTransaction transaction, Callable<T> consumer) {
-
+    LOGGER.info("\n[EncryptedTransactionDAOImpl] save(transaction, consumer)\n");
     return entityManagerTemplate.execute(
         entityManager -> {
           entityManager.persist(transaction);

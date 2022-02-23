@@ -28,6 +28,12 @@ dependencies {
 
   testImplementation "jakarta.validation:jakarta.validation-api"
   implementation "org.hibernate.validator:hibernate-validator"
+
+  implementation "org.apache.tuweni:tuweni-rlp:2.0.0"
+  implementation "org.apache.tuweni:tuweni-bytes:2.0.0"
+  implementation "org.apache.tuweni:tuweni-units:2.0.0"
+  implementation "com.google.guava:guava"
+  implementation project(":rlp")
 }
 
 sourceSets {

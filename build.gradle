@@ -159,6 +159,9 @@ allprojects {
         testImplementation "org.apache.tuweni:tuweni-rlp:2.0.0"
         testImplementation "org.apache.tuweni:tuweni-bytes:2.0.0"
 
+        implementation "org.apache.tuweni:tuweni-rlp:2.0.0"
+        implementation "org.apache.tuweni:tuweni-bytes:2.0.0"
+
       }
     }
   }
@@ -187,10 +190,15 @@ subprojects {
   apply plugin: "org.ec4j.editorconfig"
 
   repositories {
+    mavenCentral()
     mavenLocal()
     maven {
       url = "https://repo.maven.apache.org/maven2"
     }
+    maven { url "https://hyperledger.jfrog.io/hyperledger/besu-maven" }
+    maven { url "https://artifacts.consensys.net/public/maven/maven/" }
+    maven { url "https://splunk.jfrog.io/splunk/ext-releases-local" }
+    maven { url "https://dl.cloudsmith.io/public/consensys/quorum-mainnet-launcher/maven/"}
   }
 
   task allDeps(type: DependencyReportTask) {}

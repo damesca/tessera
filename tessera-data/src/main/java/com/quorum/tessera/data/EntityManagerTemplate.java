@@ -21,6 +21,7 @@ public class EntityManagerTemplate {
   }
 
   public <T> T execute(EntityManagerCallback<T> callback) {
+    LOGGER.info("[EntityManagerTemplate] execute(callback)");
     LOGGER.debug("Enter callback");
     EntityManager entityManager = entityManagerFactory.createEntityManager();
     EntityTransaction transaction = entityManager.getTransaction();
