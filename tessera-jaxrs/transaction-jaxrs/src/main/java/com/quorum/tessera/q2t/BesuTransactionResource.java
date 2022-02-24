@@ -9,7 +9,6 @@ import com.quorum.tessera.enclave.PrivacyGroup;
 import com.quorum.tessera.enclave.PrivacyMode;
 import com.quorum.tessera.encryption.PublicKey;
 import com.quorum.tessera.privacygroup.PrivacyGroupManager;
-import com.quorum.tessera.transaction.PrivateTransaction;
 import com.quorum.tessera.transaction.TransactionManager;
 import com.quorum.tessera.q2t.internal.PrivateDataHandler;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -66,7 +65,6 @@ public class BesuTransactionResource {
   public Response send(@NotNull @Valid @PrivacyValid final SendRequest sendRequest) {
 
     /*LOG*/System.out.println("[BesuTransactionResource] send()");
-    PrivateTransaction.bytes();
 
     final PublicKey sender =
         Optional.ofNullable(sendRequest.getFrom())

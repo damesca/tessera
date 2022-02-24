@@ -33,7 +33,12 @@ dependencies {
   implementation "org.apache.tuweni:tuweni-bytes:2.0.0"
   implementation "org.apache.tuweni:tuweni-units:2.0.0"
   implementation "com.google.guava:guava"
-  implementation project(":rlp")
+  //implementation project(":rlp")
+  //implementation "org.hyperledger.besu:secp256k1:0.4.1"
+  //implementation "org.hyperledger.besu:secp256k1:0.4.1"
+  //implementation project(":crypto")
+  //implementation project(":datatypes")
+  //implementation project(":plugin-api")
 }
 
 sourceSets {
