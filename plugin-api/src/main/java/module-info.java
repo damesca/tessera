@@ -1,4 +1,4 @@
-module org.hyperledger.besu.plugin {
+module tessera.plugin {
 
     requires tuweni.bytes;
     requires tuweni.units;
@@ -12,6 +12,7 @@ module org.hyperledger.besu.plugin {
     exports org.hyperledger.besu.plugin.services.query;
     exports org.hyperledger.besu.plugin.services.rpc;
     exports org.hyperledger.besu.plugin.services.securitymodule;
+    exports org.hyperledger.besu.plugin.services.securitymodule.data;
     exports org.hyperledger.besu.plugin.services.storage;
     
 }

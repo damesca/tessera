@@ -30,7 +30,7 @@ jar {
 dependencies {
   //api project(':plugin-api')
 
-  compileOnly 'com.fasterxml.jackson.core:jackson-databind'
+  compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
 
   implementation project(':crypto')
   implementation project(':rlp')

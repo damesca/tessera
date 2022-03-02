@@ -45,6 +45,10 @@ dependencies {
 
   compileOnly project(':tessera-jaxrs:openapi:common')
 
+  implementation project(":privacy")
+  implementation project(":rlp")
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation project(":plugin-api")
 }
 
 def generatedResources = "${project.buildDir}/generated-resources/openapi"

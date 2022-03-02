@@ -14,6 +14,9 @@ module tessera.transaction.jaxrs {
   requires tessera.shared;
   requires jakarta.json;
   requires io.swagger.v3.oas.annotations;
+  
+  requires tessera.privacy;
+  requires tessera.rlp;
 
   exports com.quorum.tessera.q2t;
 

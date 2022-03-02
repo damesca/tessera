@@ -35,6 +35,10 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.hyperledger.besu.ethereum.privacy.PrivateTransaction;
+import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.apache.tuweni.bytes.Bytes;
+
 @Tag(name = "quorum-to-tessera")
 @Path("/")
 public class BesuTransactionResource {
@@ -120,7 +124,8 @@ public class BesuTransactionResource {
               privacyGroupManager.createLegacyPrivacyGroup(sender, recipientList);
           requestBuilder.withPrivacyGroupId(legacyGroup.getId());
         });
-
+    
+    /////////////////////////////
     final byte[] tmp = base64Decoder.decode(sendRequest.getPayload());
     StringBuilder payload = new StringBuilder();
     for (byte aByte : tmp) {
@@ -129,6 +134,15 @@ public class BesuTransactionResource {
 
     LOGGER.info("sendRequest.getPayload(): {}", payload.toString());
     LOGGER.info("PAYLOAD-LENGTH: {}", sendRequest.getPayload().length);
+
+    RLP.input(Bytes.wrap(tmp));
+    final int size = RLP.calculateSize(Bytes.wrap(tmp));
+    System.out.println(size);
+
+    final PrivateTransaction privateTransaction =
+          PrivateTransaction.readFrom(RLP.input(Bytes.wrap(tmp)));
+    System.out.println(privateTransaction.toString());
+    ////////////////////////////
     final com.quorum.tessera.transaction.SendResponse response =
         transactionManager.send(requestBuilder.build());
 
