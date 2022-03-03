@@ -141,37 +141,9 @@ public interface PrivateTransaction {
   Restriction getRestriction();
 
   /**
-   * Returns the privacyPointer
-   *
-   * @return the privacyPointer
+   * An option to specify if the transaction has to perform OT or not.
+   * 
+   * @return otWith
    */
-  Bytes getPrivacyPointer();
-
-  /**
-   * Returns the privateData
-   *
-   * @return the privateData
-   */
-  Bytes getPrivateData();
-
-  /**
-   * Value corresponding to the 'ExtV' component of the signature of the transaction.
-   *
-   * @return the 'ExtV' component of the signature
-   */
-  BigInteger getExtV();
-
-  /**
-   * Value corresponding to the 'ExtR' component of the signature of the transaction.
-   *
-   * @return the 'ExtR' component of the signature
-   */
-  BigInteger getExtR();
-
-  /**
-   * Value corresponding to the 'ExtS' component of the signature of the transaction.
-   *
-   * @return the 'ExtS' component of the signature
-   */
-  BigInteger getExtS();
+  Bytes getOtWith();
 }

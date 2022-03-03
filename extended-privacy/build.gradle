@@ -1,0 +1,11 @@
+apply plugin: 'java-library'
+
+dependencies {
+    implementation project(":privacy")
+    implementation project(":crypto")
+    implementation project(":datatypes")
+    implementation project(":plugin-api")
+    implementation project(":rlp")
+    implementation 'org.apache.tuweni:tuweni-bytes'
+    implementation 'org.apache.tuweni:tuweni-units'
+}
