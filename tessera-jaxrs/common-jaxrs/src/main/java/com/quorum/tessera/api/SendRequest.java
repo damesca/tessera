@@ -58,16 +58,15 @@ public class SendRequest {
       schema = @Schema(format = "base64"))
   private String[] mandatoryRecipients;
 
+  // TODO: delete privateData
   @Schema(description = "private data which has to be locally stored", type = "string", format = "base64")
   private byte[] privateData;
 
   public byte[] getPayload() {
-    /*LOG*/System.out.println("api/[SendRequest] getPayload()");
     return this.payload;
   }
 
   public void setPayload(final byte[] payload) {
-    /*LOG*/System.out.println("api/[SendRequest] setPayload()");
     this.payload = payload;
   }
 
@@ -128,7 +127,6 @@ public class SendRequest {
   }
 
   public byte[] getPrivateData() {
-    /*LOG*/System.out.println("api/[SendRequest] getPrivateData()");
     return this.privateData;
   }
 

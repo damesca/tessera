@@ -21,6 +21,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tuweni.bytes.Bytes;
+
 public class TransactionManagerImpl implements TransactionManager {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TransactionManagerImpl.class);
@@ -72,6 +74,7 @@ public class TransactionManagerImpl implements TransactionManager {
         recipientList.stream().distinct().collect(Collectors.toList());
 
     final byte[] raw = sendRequest.getPayload();
+    /*LOG*/System.out.println(Bytes.wrap(raw).toBase64String());
 
     final PrivacyMode privacyMode = sendRequest.getPrivacyMode();
 

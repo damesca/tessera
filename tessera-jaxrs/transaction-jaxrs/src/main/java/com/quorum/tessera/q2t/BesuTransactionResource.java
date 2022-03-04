@@ -10,7 +10,6 @@ import com.quorum.tessera.enclave.PrivacyMode;
 import com.quorum.tessera.encryption.PublicKey;
 import com.quorum.tessera.privacygroup.PrivacyGroupManager;
 import com.quorum.tessera.transaction.TransactionManager;
-import com.quorum.tessera.q2t.internal.PrivateDataHandler;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,8 +36,10 @@ import org.slf4j.LoggerFactory;
 
 import org.hyperledger.besu.ethereum.privacy.PrivateTransaction;
 import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.apache.tuweni.bytes.Bytes;
 import extended.privacy.PrivateDataExtractor;
+import java.util.Arrays;
 
 @Tag(name = "quorum-to-tessera")
 @Path("/")
@@ -68,8 +69,6 @@ public class BesuTransactionResource {
   @Consumes(APPLICATION_JSON)
   @Produces(APPLICATION_JSON)
   public Response send(@NotNull @Valid @PrivacyValid final SendRequest sendRequest) {
-
-    /*LOG*/System.out.println("[BesuTransactionResource] send()");
 
     final PublicKey sender =
         Optional.ofNullable(sendRequest.getFrom())
@@ -105,15 +104,39 @@ public class BesuTransactionResource {
     final PrivacyMode privacyMode = PrivacyMode.fromFlag(sendRequest.getPrivacyFlag());
 
     // DONE: private data is managed here
-    //final PrivateDataHandler privateData = new PrivateDataHandler(sendRequest.getPrivateData());
+    // TODO: remove PrivateDataHandler
     // TODO: save privateData somewhere
     // TODO: run a listener point for OT
+    /////////////////////////////
+    
+    final byte[] rawPayload = base64Decoder.decode(sendRequest.getPayload());
+    
+    final PrivateTransaction privateTransaction =
+          PrivateTransaction.readFrom(RLP.input(Bytes.wrap(rawPayload)));
+    System.out.println(privateTransaction.toString());
+
+    byte[] sendRequestPayload = null;
+    if(privateTransaction.isContractCreation()){
+        PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privateTransaction);
+        PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
+        System.out.println(blindedTx.toString());
+    
+        BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
+        blindedTx.writeTo(rlpOutput);
+        String stringBlindedPayload = rlpOutput.encoded().toBase64String();
+        sendRequestPayload = rlpOutput.encoded().toBase64String().getBytes();
+    }else{
+        sendRequestPayload = sendRequest.getPayload();
+    }
+
+    //////////////////////////////
 
     final com.quorum.tessera.transaction.SendRequest.Builder requestBuilder =
         com.quorum.tessera.transaction.SendRequest.Builder.create()
             .withRecipients(recipientList)
             .withSender(sender)
-            .withPayload(sendRequest.getPayload())
+            //.withPayload(sendRequest.getPayload())
+            .withPayload(sendRequestPayload)
             .withExecHash(execHash)
             .withPrivacyMode(privacyMode)
             .withAffectedContractTransactions(affectedTransactions);
@@ -126,29 +149,6 @@ public class BesuTransactionResource {
           requestBuilder.withPrivacyGroupId(legacyGroup.getId());
         });
     
-    /////////////////////////////
-    
-    final byte[] tmp = base64Decoder.decode(sendRequest.getPayload());
-    /*
-    StringBuilder payload = new StringBuilder();
-    for (byte aByte : tmp) {
-        payload.append(String.format("%02x", aByte));
-    }
-
-    LOGGER.info("sendRequest.getPayload(): {}", payload.toString());
-    LOGGER.info("PAYLOAD-LENGTH: {}", sendRequest.getPayload().length);
-
-    RLP.input(Bytes.wrap(tmp));
-    final int size = RLP.calculateSize(Bytes.wrap(tmp));
-    System.out.println(size);
-    */
-    final PrivateTransaction privateTransaction =
-          PrivateTransaction.readFrom(RLP.input(Bytes.wrap(tmp)));
-    System.out.println(privateTransaction.toString());
-    PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privateTransaction);
-    PrivateTransaction newTx = dataExtractor.getBlindedTransaction();
-    /*LOG*/System.out.println(newTx.toString());
-    ////////////////////////////
     final com.quorum.tessera.transaction.SendResponse response =
         transactionManager.send(requestBuilder.build());
 
