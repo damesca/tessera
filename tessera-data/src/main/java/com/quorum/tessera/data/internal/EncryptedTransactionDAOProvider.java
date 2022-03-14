@@ -19,6 +19,8 @@ public class EncryptedTransactionDAOProvider {
 
   public static EncryptedTransactionDAO provider() {
 
+    /*LOG*/System.out.println(" >>> [EncryptedTransactionDAOProvider] provider()");
+
     Config config = ConfigFactory.create().getConfig();
 
     final DataSource dataSource = DataSourceFactory.create().create(config.getJdbcConfig());

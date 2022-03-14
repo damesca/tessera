@@ -25,6 +25,9 @@ public class EncryptedRawTransactionDAOImpl implements EncryptedRawTransactionDA
 
   @Override
   public EncryptedRawTransaction save(final EncryptedRawTransaction entity) {
+
+    /*LOG*/System.out.println("\n >>> [EncryptedRawTransactionDAOImpl] save(entity)\n");
+
     LOGGER.debug(
         "Persisting EncryptedRawTransaction with hash {}, payload {}, key {}, nonce {} and from {}",
         entity.getHash(),

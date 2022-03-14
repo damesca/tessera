@@ -48,6 +48,7 @@ public class EnclaveImpl implements Enclave {
     final EncodedPayload.Builder payloadBuilder = EncodedPayload.Builder.create();
 
     privacyMetadata.getPrivacyGroupId().ifPresent(payloadBuilder::withPrivacyGroupId);
+    privacyMetadata.getListeningPort().ifPresent(payloadBuilder::withListeningPort);
 
     return payloadBuilder
         .withSenderKey(senderPublicKey)

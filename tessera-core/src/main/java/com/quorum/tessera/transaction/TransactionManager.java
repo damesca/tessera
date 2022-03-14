@@ -18,6 +18,10 @@ public interface TransactionManager {
 
   MessageHash storePayload(EncodedPayload transactionPayload);
 
+  boolean storeEndpoint(MessageHash transactionHash, int port);
+
+  int getEndpoint(MessageHash hash);
+
   ReceiveResponse receive(ReceiveRequest request);
 
   StoreRawResponse store(StoreRawRequest storeRequest);

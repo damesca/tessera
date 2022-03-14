@@ -15,11 +15,13 @@ public class CBOREncoder implements PayloadEncoder {
   @Override
   public byte[] encode(EncodedPayload payload) {
 
+    /*LOG*/System.out.println("[CBOREncoder] encode()");
+
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     try (CBORGenerator generator = cborFactory.createGenerator(output)) {
 
-      generator.writeStartObject(11);
+      generator.writeStartObject(12);
       generator.writeBinaryField("sender", payload.getSenderKey().getKeyBytes());
       generator.writeBinaryField("cipherText", payload.getCipherText());
       generator.writeBinaryField("nonce", payload.getCipherTextNonce().getNonceBytes());
@@ -64,6 +66,11 @@ public class CBOREncoder implements PayloadEncoder {
 
       generator.writeBinaryField("privacyGroupId", privacyGroupId);
 
+      final int listeningPort = 
+          payload.getListeningPort().map(Integer::intValue).orElse(0);
+      
+      generator.writeNumberField("listeningPort", listeningPort);
+
       generator.writeEndObject();
 
       generator.flush();
@@ -77,6 +84,8 @@ public class CBOREncoder implements PayloadEncoder {
 
   @Override
   public EncodedPayload decode(byte[] input) {
+
+    /*LOG*/System.out.println("[CBOREncoder] decode()");
 
     EncodedPayload.Builder payloadBuilder = EncodedPayload.Builder.create();
 
@@ -174,6 +183,13 @@ public class CBOREncoder implements PayloadEncoder {
           final byte[] groupId = parser.getBinaryValue();
           if (groupId.length > 0)
             payloadBuilder.withPrivacyGroupId(PrivacyGroup.Id.fromBytes(groupId));
+          continue;
+        }
+
+        if (parser.getCurrentName().equals("listeningPort")) {
+          final int listeningPort = parser.nextIntValue(0);
+          if (listeningPort > 0)
+            payloadBuilder.withListeningPort(listeningPort);
         }
       }
     } catch (Exception ex) {

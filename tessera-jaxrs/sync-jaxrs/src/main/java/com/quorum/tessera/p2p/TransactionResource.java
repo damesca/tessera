@@ -3,10 +3,14 @@ package com.quorum.tessera.p2p;
 import static jakarta.ws.rs.core.MediaType.*;
 import static java.util.Collections.emptyList;
 
+import java.nio.charset.StandardCharsets;
+
 import com.quorum.tessera.base64.Base64Codec;
+import com.quorum.tessera.data.InteractivePrivacyEndpoint;
 import com.quorum.tessera.data.MessageHash;
 import com.quorum.tessera.enclave.EncodedPayloadCodec;
 import com.quorum.tessera.enclave.PayloadEncoder;
+import com.quorum.tessera.enclave.EncodedPayload;
 import com.quorum.tessera.encryption.PublicKey;
 import com.quorum.tessera.p2p.recovery.ResendBatchRequest;
 import com.quorum.tessera.p2p.resend.ResendRequest;
@@ -26,6 +30,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import jakarta.persistence.EntityManagerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -49,14 +54,14 @@ public class TransactionResource {
 
   private final LegacyResendManager legacyResendManager;
 
-  public TransactionResource(
-      final TransactionManager transactionManager,
-      final BatchResendManager batchResendManager,
-      final LegacyResendManager legacyResendManager) {
-    this.transactionManager = Objects.requireNonNull(transactionManager);
-    this.batchResendManager = Objects.requireNonNull(batchResendManager);
-    this.legacyResendManager = Objects.requireNonNull(legacyResendManager);
-  }
+    public TransactionResource(
+            final TransactionManager transactionManager,
+            final BatchResendManager batchResendManager,
+            final LegacyResendManager legacyResendManager) {
+        this.transactionManager = Objects.requireNonNull(transactionManager);
+        this.batchResendManager = Objects.requireNonNull(batchResendManager);
+        this.legacyResendManager = Objects.requireNonNull(legacyResendManager);
+    }
 
   @Operation(
       summary = "/resend",
@@ -189,6 +194,7 @@ public class TransactionResource {
           final List<String> headers) {
 
     LOGGER.debug("Received push request");
+    /*LOG*/System.out.println(" >>> [Received push request]");
 
     final Set<String> versions =
         Optional.ofNullable(headers).orElse(emptyList()).stream()
@@ -200,7 +206,24 @@ public class TransactionResource {
 
     final PayloadEncoder payloadEncoder = PayloadEncoder.create(codec);
 
-    final MessageHash messageHash = transactionManager.storePayload(payloadEncoder.decode(payload));
+    final EncodedPayload decodedPayload = payloadEncoder.decode(payload);
+    /*LOG*/System.out.println(" >>> [TransactionResource] payload has been decoded");
+
+    // DONE: save the listeningPort
+    Optional<Integer> listeningPort = decodedPayload.getListeningPort();
+    if(listeningPort.isPresent()){
+        /*LOG*/System.out.printf(" >>> [TransactionResource] listeningPort: %d\n", listeningPort.get().intValue());
+        // DONE: add persistence
+        MessageHash hash = new MessageHash(decodedPayload.getExecHash());
+        //byte[] hash = decodedPayload.getExecHash();
+
+        /*LOG*/System.out.println(" >>> [TransactionResource] storeEndpoint");
+        /*LOG*/System.out.println(hash);
+        this.transactionManager.storeEndpoint(hash, listeningPort.get().intValue());
+    }
+    
+    final MessageHash messageHash = transactionManager.storePayload(decodedPayload);
+
     LOGGER.debug("Push request generated hash {}", messageHash);
     // TODO: Return the query url not the string of the messageHash
     return Response.status(Response.Status.CREATED).entity(Objects.toString(messageHash)).build();

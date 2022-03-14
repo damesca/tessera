@@ -18,6 +18,8 @@ public class LegacyPayloadEncoder implements BinaryEncoder {
 
   public byte[] encode(final LegacyEncodedPayload payload) {
 
+    /*LOG*/System.out.println("[LegacyPrivateEncoder] encode()");
+
     final byte[] senderKey = encodeField(payload.getSenderKey().getKeyBytes());
     final byte[] cipherText = encodeField(payload.getCipherText());
     final byte[] nonce = encodeField(payload.getCipherTextNonce().getNonceBytes());
@@ -44,6 +46,9 @@ public class LegacyPayloadEncoder implements BinaryEncoder {
   }
 
   public LegacyEncodedPayload decode(final byte[] input) {
+
+    /*LOG*/System.out.println("[LegacyPayloadEncoder] decode()");
+
     final ByteBuffer buffer = ByteBuffer.wrap(input);
 
     final long senderSize = buffer.getLong();

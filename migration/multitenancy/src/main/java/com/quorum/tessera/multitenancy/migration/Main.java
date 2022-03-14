@@ -9,6 +9,7 @@ public class Main {
 
   public static void main(String... args) {
     try {
+      /*LOG*/System.out.println(" ### [Main] migration");
       final CommandLine commandLine = new CommandLine(new MigrationCliAdapter());
       commandLine
           .registerConverter(Config.class, new ConfigConverter())

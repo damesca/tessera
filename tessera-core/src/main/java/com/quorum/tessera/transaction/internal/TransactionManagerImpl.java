@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tuweni.bytes.Bytes;
+import com.quorum.tessera.data.InteractivePrivacyEndpointDAO;
+import com.quorum.tessera.data.InteractivePrivacyEndpoint;
 
 public class TransactionManagerImpl implements TransactionManager {
 
@@ -30,6 +32,8 @@ public class TransactionManagerImpl implements TransactionManager {
   private final EncryptedTransactionDAO encryptedTransactionDAO;
 
   private final EncryptedRawTransactionDAO encryptedRawTransactionDAO;
+
+  private final InteractivePrivacyEndpointDAO interactivePrivacyEndpointDAO;
 
   private final BatchPayloadPublisher batchPayloadPublisher;
 
@@ -48,7 +52,8 @@ public class TransactionManagerImpl implements TransactionManager {
       ResendManager resendManager,
       BatchPayloadPublisher batchPayloadPublisher,
       PrivacyHelper privacyHelper,
-      PayloadDigest payloadDigest) {
+      PayloadDigest payloadDigest,
+      InteractivePrivacyEndpointDAO interactivePrivacyEndpointDAO) {
     this.encryptedTransactionDAO =
         Objects.requireNonNull(encryptedTransactionDAO, "encryptedTransactionDAO is required");
     this.batchPayloadPublisher =
@@ -60,6 +65,7 @@ public class TransactionManagerImpl implements TransactionManager {
     this.resendManager = Objects.requireNonNull(resendManager, "resendManager is required");
     this.privacyHelper = Objects.requireNonNull(privacyHelper, "privacyHelper is required");
     this.payloadDigest = Objects.requireNonNull(payloadDigest, "payloadDigest is required");
+    this.interactivePrivacyEndpointDAO = Objects.requireNonNull(interactivePrivacyEndpointDAO, "interactivePrivacyEndpointDAO is required");
   }
 
   @Override
@@ -74,11 +80,12 @@ public class TransactionManagerImpl implements TransactionManager {
         recipientList.stream().distinct().collect(Collectors.toList());
 
     final byte[] raw = sendRequest.getPayload();
-    /*LOG*/System.out.println(Bytes.wrap(raw).toBase64String());
 
     final PrivacyMode privacyMode = sendRequest.getPrivacyMode();
 
     final byte[] execHash = sendRequest.getExecHash();
+
+    //final int listeningPort = sendRequest.getListeningPort();
 
     final List<AffectedTransaction> affectedContractTransactions =
         privacyHelper.findAffectedContractTransactionsFromSendRequest(
@@ -97,6 +104,7 @@ public class TransactionManagerImpl implements TransactionManager {
             .withExecHash(execHash)
             .withMandatoryRecipients(sendRequest.getMandatoryRecipients());
     sendRequest.getPrivacyGroupId().ifPresent(metadataBuilder::withPrivacyGroupId);
+    sendRequest.getListeningPort().ifPresent(metadataBuilder::withListeningPort);
 
     final EncodedPayload payload =
         enclave.encryptPayload(
@@ -336,6 +344,39 @@ public class TransactionManagerImpl implements TransactionManager {
 
     LOGGER.info("Updated existing payload with hash {}", transactionHash);
     return transactionHash;
+  }
+
+  @Override
+  public synchronized boolean storeEndpoint(MessageHash transactionHash, int port) {
+
+    byte[] id = transactionHash.getHashBytes();
+
+    InteractivePrivacyEndpoint endpoint = new InteractivePrivacyEndpoint(id, port);
+
+    this.interactivePrivacyEndpointDAO.save(endpoint);
+
+    /*LOG*/System.out.println(" >>> [TransactionResource] the port has been saved");
+    Optional<InteractivePrivacyEndpoint> retrievedPort = this.interactivePrivacyEndpointDAO.findById(transactionHash);
+    if(retrievedPort.isPresent()){
+        /*LOG*/System.out.printf(" >>> [TransactionResource] retrieved port: %d\n", retrievedPort.get().getPort());
+    }else{
+        /*LOG*/System.out.println(" >>> [TransactionResource] no port");
+    }
+
+    return true;
+  }
+
+  @Override
+  public synchronized int getEndpoint(MessageHash hash) {
+    //MessageHash h = new MessageHash(hash);
+    Optional<InteractivePrivacyEndpoint> endpoint = this.interactivePrivacyEndpointDAO.findById(hash);
+    int port = 0;
+    
+    if(endpoint.isPresent()){
+      port = endpoint.get().getPort();
+    }
+    
+    return port;
   }
 
   @Override

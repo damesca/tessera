@@ -24,7 +24,7 @@ public interface SendRequest {
 
   Set<PublicKey> getMandatoryRecipients();
 
-  //byte[] getPrivateData();
+  Optional<Integer> getListeningPort();
 
   class Builder {
 
@@ -44,7 +44,7 @@ public interface SendRequest {
 
     private Set<PublicKey> mandatoryRecipients = Collections.emptySet();
 
-    //private byte[] privateData;
+    private int listeningPort;
 
     public static Builder create() {
       return new Builder() {};
@@ -90,10 +90,10 @@ public interface SendRequest {
       return this;
     }
 
-    /*public Builder withPrivateData(byte[] privateData) {
-      this.privateData = privateData;
+    public Builder withListeningPort(int listeningPort) {
+      this.listeningPort = listeningPort;
       return this;
-    }*/
+    }
 
     public SendRequest build() {
 
@@ -157,10 +157,10 @@ public interface SendRequest {
           return Set.copyOf(mandatoryRecipients);
         }
 
-        /*@Override
-        public byte[] getPrivateData() {
-          return Arrays.copyOf(privateData, privateData.length);
-        }*/
+        @Override
+        public Optional<Integer> getListeningPort() {
+          return Optional.ofNullable(listeningPort);
+        }
       };
     }
   }

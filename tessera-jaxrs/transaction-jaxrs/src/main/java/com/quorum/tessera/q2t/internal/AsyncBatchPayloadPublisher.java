@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Optional;
 
 public class AsyncBatchPayloadPublisher implements BatchPayloadPublisher {
 
@@ -45,6 +46,7 @@ public class AsyncBatchPayloadPublisher implements BatchPayloadPublisher {
   @Override
   public void publishPayload(EncodedPayload payload, List<PublicKey> recipientKeys) {
     /*LOG*/System.out.println("\n[AsyncBatchPayloadPublisher] publishPayload()\n");
+
     if (recipientKeys.size() == 0) {
       return;
     }

@@ -32,6 +32,7 @@ public class Main {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
   public static void main(final String... args) throws Exception {
+    /*LOG*/System.out.println(" >>> [MAIN] Tessera-DIST");
     Security.addProvider(new BouncyCastleProvider());
     LOGGER.debug("args [{}]", String.join(",", args));
     try {

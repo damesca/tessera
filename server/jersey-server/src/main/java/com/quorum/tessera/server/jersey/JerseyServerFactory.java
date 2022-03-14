@@ -18,6 +18,7 @@ public class JerseyServerFactory implements TesseraServerFactory<Object> {
 
   @Override
   public TesseraServer createServer(ServerConfig serverConfig, Set<Object> services) {
+    /*LOG*/System.out.println(">>> JERSEY-SERVER-FACTORY --- createServer()");
     LOGGER.debug(
         "Creating JAXRS application with {} services: {}",
         serverConfig,

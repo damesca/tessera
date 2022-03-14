@@ -13,6 +13,7 @@ public class PayloadEncoderImpl implements PayloadEncoder, BinaryEncoder {
   @Override
   public byte[] encode(final EncodedPayload payload) {
 
+    /*LOG*/System.out.println("[PayloadEncoderImpl] encode()");
     final byte[] senderKey = encodeField(payload.getSenderKey().getKeyBytes());
     final byte[] cipherText = encodeField(payload.getCipherText());
     final byte[] nonce = encodeField(payload.getCipherTextNonce().getNonceBytes());
@@ -69,6 +70,16 @@ public class PayloadEncoderImpl implements PayloadEncoder, BinaryEncoder {
             .map(this::encodeField)
             .orElse(new byte[0]);
 
+    byte[] listeningPort = null;
+    Optional<Integer> lPort = payload.getListeningPort();
+    if(lPort.isPresent()){
+      /*LOG*/System.out.println("[PayloadEncoderImpl] lPort.isPresent()");
+      listeningPort = this.encodeField(new byte[]{ lPort.get().byteValue() });
+    }else{
+      /*LOG*/System.out.println("[PayloadEncoderImpl] lPort is not present()");
+      listeningPort = new byte[0];
+    }
+
     return ByteBuffer.allocate(
             senderKey.length
                 + cipherText.length
@@ -80,7 +91,8 @@ public class PayloadEncoderImpl implements PayloadEncoder, BinaryEncoder {
                 + affectedContractsPayloadLength
                 + executionHash.length
                 + mandatoryRecipients.length
-                + privacyGroupId.length)
+                + privacyGroupId.length
+                + listeningPort.length)
         .put(senderKey)
         .put(cipherText)
         .put(nonce)
@@ -92,12 +104,16 @@ public class PayloadEncoderImpl implements PayloadEncoder, BinaryEncoder {
         .put(executionHash)
         .put(mandatoryRecipients)
         .put(privacyGroupId)
+        .put(listeningPort)
         .array();
   }
 
   @Override
   public EncodedPayload decode(final byte[] input) {
     final ByteBuffer buffer = ByteBuffer.wrap(input);
+
+    /*LOG*/System.out.println("[PayloadEncoder] decode()");
+    /*LOG*/System.out.println(buffer.toString());
 
     final long senderSize = buffer.getLong();
     final byte[] senderKey = new byte[Math.toIntExact(senderSize)];
@@ -226,6 +242,13 @@ public class PayloadEncoderImpl implements PayloadEncoder, BinaryEncoder {
     if (privacyGroupId.length > 0) {
       payloadBuilder.withPrivacyGroupId(PrivacyGroup.Id.fromBytes(privacyGroupId));
     }
+
+    if (!buffer.hasRemaining()) {
+      return payloadBuilder.build();
+    }
+
+    final int listeningPort = buffer.getInt();
+    payloadBuilder.withListeningPort(listeningPort);
 
     return payloadBuilder.build();
   }

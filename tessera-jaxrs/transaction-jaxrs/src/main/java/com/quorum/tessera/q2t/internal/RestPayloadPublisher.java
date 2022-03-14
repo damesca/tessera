@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Optional;
 
 public class RestPayloadPublisher implements PayloadPublisher {
 
@@ -41,7 +42,7 @@ public class RestPayloadPublisher implements PayloadPublisher {
   @Override
   public void publishPayload(EncodedPayload payload, PublicKey recipientKey) {
 
-    /*LOG*/System.out.printf("\n[RestPayloadPublisher] publishPayload\n");
+
     final NodeInfo remoteNodeInfo = discovery.getRemoteNodeInfo(recipientKey);
     final Set<String> supportedApiVersions = remoteNodeInfo.supportedApiVersions();
     final EncodedPayloadCodec preferredCodec =

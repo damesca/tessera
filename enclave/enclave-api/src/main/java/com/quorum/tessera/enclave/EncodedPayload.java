@@ -32,6 +32,8 @@ public class EncodedPayload {
 
   private final Set<PublicKey> mandatoryRecipients;
 
+  private final int listeningPort;
+
   private EncodedPayload(
       final PublicKey senderKey,
       final byte[] cipherText,
@@ -43,7 +45,8 @@ public class EncodedPayload {
       final Map<TxHash, SecurityHash> affectedContractTransactions,
       final byte[] execHash,
       final PrivacyGroup.Id privacyGroupId,
-      final Set<PublicKey> mandatoryRecipients) {
+      final Set<PublicKey> mandatoryRecipients,
+      final int listeningPort) {
     this.senderKey = senderKey;
     this.cipherText = cipherText;
     this.cipherTextNonce = cipherTextNonce;
@@ -55,6 +58,7 @@ public class EncodedPayload {
     this.execHash = execHash;
     this.privacyGroupId = privacyGroupId;
     this.mandatoryRecipients = mandatoryRecipients;
+    this.listeningPort = listeningPort;
   }
 
   public PublicKey getSenderKey() {
@@ -101,6 +105,10 @@ public class EncodedPayload {
     return mandatoryRecipients;
   }
 
+  public Optional<Integer> getListeningPort() {
+    return Optional.ofNullable(listeningPort);
+  }
+
   public static class Builder {
 
     private Builder() {}
@@ -132,6 +140,7 @@ public class EncodedPayload {
               .withExecHash(encodedPayload.getExecHash());
 
       encodedPayload.getPrivacyGroupId().ifPresent(builder::withPrivacyGroupId);
+      encodedPayload.getListeningPort().ifPresent(builder::withListeningPort);
 
       return builder;
     }
@@ -194,6 +203,8 @@ public class EncodedPayload {
     private PrivacyGroup.Id privacyGroupId;
 
     private Set<PublicKey> mandatoryRecipients = Collections.emptySet();
+
+    private int listeningPort;
 
     public Builder withSenderKey(final PublicKey senderKey) {
       this.senderKey = senderKey;
@@ -282,6 +293,11 @@ public class EncodedPayload {
       return this;
     }
 
+    public Builder withListeningPort(final int listeningPort) {
+      this.listeningPort = listeningPort;
+      return this;
+    }
+
     public EncodedPayload build() {
 
       Map<TxHash, SecurityHash> affectedTransactions =
@@ -314,7 +330,8 @@ public class EncodedPayload {
           affectedTransactions,
           execHash,
           privacyGroupId,
-          mandatoryRecipients);
+          mandatoryRecipients,
+          listeningPort);
     }
   }
 

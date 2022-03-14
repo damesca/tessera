@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,10 @@ import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.apache.tuweni.bytes.Bytes;
 import extended.privacy.PrivateDataExtractor;
+import extended.privacy.ObliviousTransferServer;
+import extended.privacy.ObliviousTransferClient;
 import java.util.Arrays;
+import java.util.Random;
 
 @Tag(name = "quorum-to-tessera")
 @Path("/")
@@ -102,13 +106,8 @@ public class BesuTransactionResource {
         Optional.ofNullable(sendRequest.getExecHash()).map(String::getBytes).orElse(new byte[0]);
 
     final PrivacyMode privacyMode = PrivacyMode.fromFlag(sendRequest.getPrivacyFlag());
-
-    // DONE: private data is managed here
-    // TODO: remove PrivateDataHandler
-    // TODO: save privateData somewhere
-    // TODO: run a listener point for OT
-    /////////////////////////////
     
+    // Get the privateTransaction to select the subsequent procedures
     final byte[] rawPayload = base64Decoder.decode(sendRequest.getPayload());
     
     final PrivateTransaction privateTransaction =
@@ -116,17 +115,65 @@ public class BesuTransactionResource {
     System.out.println(privateTransaction.toString());
 
     byte[] sendRequestPayload = null;
-    if(privateTransaction.isContractCreation()){
-        PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privateTransaction);
-        PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
-        System.out.println(blindedTx.toString());
-    
-        BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
-        blindedTx.writeTo(rlpOutput);
-        String stringBlindedPayload = rlpOutput.encoded().toBase64String();
-        sendRequestPayload = rlpOutput.encoded().toBase64String().getBytes();
-    }else{
+    int listeningPort = 0;
+    // Check otWith
+    if(privateTransaction.getOtWith().compareTo(Bytes.ofUnsignedShort(0)) == 0) {
+        // It is not a otWith transaction
         sendRequestPayload = sendRequest.getPayload();
+    } else {
+        // It is a otWith transaction
+        if(privateTransaction.isContractCreation()) {
+            // It is a contract creation
+
+            PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privateTransaction);
+            PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
+            Bytes privateArguments = dataExtractor.getPrivateArguments();
+            System.out.println(blindedTx.toString());
+        
+            // TODO: save privateData into database
+
+            // DONE: establish a new listener point
+            // DONE: get listingPort dynamically
+            // TODO: persist the ports which are in use
+            Random rndGenerator = new Random();
+            listeningPort = rndGenerator.nextInt(1000)+6000; // Extract a port from 6000 to (6000+1000)
+
+            System.out.println("Executing OTServer...");
+            ObliviousTransferServer server = new ObliviousTransferServer(listeningPort, privateArguments);
+            //listeningPort = server.getListeningPort();
+            Thread t = new Thread(server);
+            t.start();
+            
+
+            // DONE: send the endPoint port to the destination Tessera node (using requestBuilder)
+
+            BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
+            blindedTx.writeTo(rlpOutput);
+            String stringBlindedPayload = rlpOutput.encoded().toBase64String();
+            sendRequestPayload = rlpOutput.encoded().toBase64String().getBytes();
+        } else {
+            // It is not a contract creation
+
+            // TODO: check if it is a "slice" call or not
+
+            sendRequestPayload = sendRequest.getPayload();
+
+            // TODO: connect to a listener point
+            // TODO: get the listeningPort dynamically
+
+            //byte[] hash = base64Decoder.decode(sendRequest.getExecHash().getBytes());
+            //int port = 0;
+            int port = this.transactionManager.getEndpoint(new MessageHash(execHash));
+            /*LOG*/System.out.printf(" >> [BesuTransactionResource] retrievedPort: %d\n", port);
+
+            System.out.println("Executing OTClient...");
+            ObliviousTransferClient client = new ObliviousTransferClient();
+            client.startConnection("127.0.0.1", port);
+            String response = client.sendMessage(">> hello server");
+            System.out.println(response);
+            client.stopConnection();
+                
+        }
     }
 
     //////////////////////////////
@@ -135,11 +182,14 @@ public class BesuTransactionResource {
         com.quorum.tessera.transaction.SendRequest.Builder.create()
             .withRecipients(recipientList)
             .withSender(sender)
-            //.withPayload(sendRequest.getPayload())
             .withPayload(sendRequestPayload)
             .withExecHash(execHash)
             .withPrivacyMode(privacyMode)
             .withAffectedContractTransactions(affectedTransactions);
+
+    if(listeningPort != 0){
+        requestBuilder.withListeningPort(listeningPort);
+    }
 
     optionalPrivacyGroup.ifPresentOrElse(
         requestBuilder::withPrivacyGroupId,

@@ -15,6 +15,8 @@ public interface PrivacyMetadata {
 
   Set<PublicKey> getMandatoryRecipients();
 
+  Optional<Integer> getListeningPort();
+
   class Builder {
 
     private PrivacyMode privacyMode;
@@ -26,6 +28,8 @@ public interface PrivacyMetadata {
     private PrivacyGroup.Id privacyGroupId;
 
     private Set<PublicKey> mandatoryRecipients = Collections.emptySet();
+
+    private int listeningPort;
 
     public static Builder create() {
       return new Builder();
@@ -53,6 +57,11 @@ public interface PrivacyMetadata {
 
     public Builder withMandatoryRecipients(Set<PublicKey> mandatoryRecipients) {
       this.mandatoryRecipients = mandatoryRecipients;
+      return this;
+    }
+
+    public Builder withListeningPort(int listeningPort) {
+      this.listeningPort = listeningPort;
       return this;
     }
 
@@ -95,6 +104,11 @@ public interface PrivacyMetadata {
         @Override
         public Set<PublicKey> getMandatoryRecipients() {
           return Set.copyOf(mandatoryRecipients);
+        }
+
+        @Override
+        public Optional<Integer> getListeningPort() {
+          return Optional.ofNullable(listeningPort);
         }
       };
     }
