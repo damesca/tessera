@@ -8,6 +8,11 @@ module tessera.transaction {
   requires tessera.partyinfo;
   requires tessera.context;
 
+  requires tessera.privacy;
+  requires tessera.rlp;
+  requires tessera.extended.privacy;
+  requires tessera.datatypes;
+
   exports com.quorum.tessera.transaction;
   exports com.quorum.tessera.transaction.exception;
   exports com.quorum.tessera.transaction.publish;

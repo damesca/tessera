@@ -6,6 +6,8 @@ import com.quorum.tessera.enclave.PrivacyMode;
 import com.quorum.tessera.encryption.PublicKey;
 import java.util.*;
 
+import org.hyperledger.besu.datatypes.Address;
+
 public interface SendRequest {
 
   PublicKey getSender();
@@ -26,6 +28,8 @@ public interface SendRequest {
 
   Optional<Integer> getListeningPort();
 
+  Optional<Address> getContractAddress();
+
   class Builder {
 
     private PublicKey from;
@@ -45,6 +49,8 @@ public interface SendRequest {
     private Set<PublicKey> mandatoryRecipients = Collections.emptySet();
 
     private int listeningPort;
+
+    private Address contractAddress;
 
     public static Builder create() {
       return new Builder() {};
@@ -92,6 +98,11 @@ public interface SendRequest {
 
     public Builder withListeningPort(int listeningPort) {
       this.listeningPort = listeningPort;
+      return this;
+    }
+
+    public Builder withContractAddress(Address contractAddress) {
+      this.contractAddress = contractAddress;
       return this;
     }
 
@@ -160,6 +171,11 @@ public interface SendRequest {
         @Override
         public Optional<Integer> getListeningPort() {
           return Optional.ofNullable(listeningPort);
+        }
+
+        @Override
+        public Optional<Address> getContractAddress() {
+          return Optional.ofNullable(contractAddress);
         }
       };
     }

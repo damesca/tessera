@@ -8,6 +8,12 @@ import com.quorum.tessera.encryption.PublicKey;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
+import org.hyperledger.besu.datatypes.Address;
+//import org.hyperledger.besu.plugin.data.Address;
+import org.apache.tuweni.bytes.Bytes;
+//import org.apache.tuweni.bytes.DelegatingBytes;
+
+
 public class CBOREncoder implements PayloadEncoder {
 
   final CBORFactory cborFactory = new CBORFactory();
@@ -21,7 +27,7 @@ public class CBOREncoder implements PayloadEncoder {
 
     try (CBORGenerator generator = cborFactory.createGenerator(output)) {
 
-      generator.writeStartObject(12);
+      generator.writeStartObject(13);
       generator.writeBinaryField("sender", payload.getSenderKey().getKeyBytes());
       generator.writeBinaryField("cipherText", payload.getCipherText());
       generator.writeBinaryField("nonce", payload.getCipherTextNonce().getNonceBytes());
@@ -69,7 +75,19 @@ public class CBOREncoder implements PayloadEncoder {
       final int listeningPort = 
           payload.getListeningPort().map(Integer::intValue).orElse(0);
       
+      /*LOG*/System.out.println(" >>> [CBOREncoder] encode() listeningPort");
+      /*LOG*/System.out.println(listeningPort);
+      
       generator.writeNumberField("listeningPort", listeningPort);
+
+      final byte[] contractAddress = payload.getContractAddress().map(Bytes::copy).map(Bytes::toArray).orElse(new byte[0]);
+
+      /*LOG*/System.out.println(" >>> [CBOREncoder] encode() address");
+      /*LOG*/System.out.println(Bytes.wrap(contractAddress).toHexString());
+      /*LOG*/System.out.println(contractAddress.length);
+
+      //generator.writeBinaryField("contractAddress", contractAddress);
+      generator.writeBinaryField("contractAddress", contractAddress);
 
       generator.writeEndObject();
 
@@ -187,9 +205,22 @@ public class CBOREncoder implements PayloadEncoder {
         }
 
         if (parser.getCurrentName().equals("listeningPort")) {
+          //validateToken(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
           final int listeningPort = parser.nextIntValue(0);
+          /*LOG*/System.out.println(" >>> [CBOREncoder] listeningPort");
+          /*LOG*/System.out.println(listeningPort);
           if (listeningPort > 0)
             payloadBuilder.withListeningPort(listeningPort);
+          continue;
+        }
+
+        if (parser.getCurrentName().equals("contractAddress")) {
+          validateToken(JsonToken.VALUE_EMBEDDED_OBJECT, parser.nextToken());
+          /*LOG*/System.out.println(" >>> [CBOREnconder] decode() contractAddress");
+          final byte[] contractAddress = parser.getBinaryValue();
+          /*LOG*/System.out.println(contractAddress.length);
+          if (contractAddress.length > 0)
+            payloadBuilder.withContractAddress(Address.wrap(Bytes.wrap(contractAddress)));
         }
       }
     } catch (Exception ex) {

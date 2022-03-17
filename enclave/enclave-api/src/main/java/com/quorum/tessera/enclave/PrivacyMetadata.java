@@ -3,6 +3,8 @@ package com.quorum.tessera.enclave;
 import com.quorum.tessera.encryption.PublicKey;
 import java.util.*;
 
+import org.hyperledger.besu.datatypes.Address;
+
 public interface PrivacyMetadata {
 
   PrivacyMode getPrivacyMode();
@@ -17,6 +19,8 @@ public interface PrivacyMetadata {
 
   Optional<Integer> getListeningPort();
 
+  Optional<Address> getContractAddress();
+
   class Builder {
 
     private PrivacyMode privacyMode;
@@ -30,6 +34,8 @@ public interface PrivacyMetadata {
     private Set<PublicKey> mandatoryRecipients = Collections.emptySet();
 
     private int listeningPort;
+
+    private Address contractAddress;
 
     public static Builder create() {
       return new Builder();
@@ -62,6 +68,12 @@ public interface PrivacyMetadata {
 
     public Builder withListeningPort(int listeningPort) {
       this.listeningPort = listeningPort;
+      return this;
+    }
+
+    public Builder withContractAddress(Address contractAddress) {
+      /*LOG*/System.out.println(" [PrivacyMetadata] withContractAddress()");
+      this.contractAddress = contractAddress;
       return this;
     }
 
@@ -109,6 +121,11 @@ public interface PrivacyMetadata {
         @Override
         public Optional<Integer> getListeningPort() {
           return Optional.ofNullable(listeningPort);
+        }
+
+        @Override
+        public Optional<Address> getContractAddress() {
+          return Optional.ofNullable(contractAddress);
         }
       };
     }

@@ -21,6 +21,8 @@ module tessera.partyinfo.jaxrs {
   requires io.swagger.v3.oas.annotations;
   requires jakarta.persistence;
 
+  requires tessera.datatypes;
+
   exports com.quorum.tessera.p2p;
   exports com.quorum.tessera.p2p.resend;
   exports com.quorum.tessera.p2p.partyinfo;

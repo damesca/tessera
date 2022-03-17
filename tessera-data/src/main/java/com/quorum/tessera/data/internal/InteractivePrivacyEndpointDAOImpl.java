@@ -41,14 +41,12 @@ public class InteractivePrivacyEndpointDAOImpl implements InteractivePrivacyEndp
     }
 
     @Override
-    public Optional<InteractivePrivacyEndpoint> findById(MessageHash id) {
+    public Optional<InteractivePrivacyEndpoint> findById(byte[] id) {
         LOGGER.debug("Retrieving endpoint with Id {}", id);
-
-        byte[] newId = id.getHashBytes();
 
         InteractivePrivacyEndpoint interactivePrivacyEndpoint =
             entityManagerTemplate.execute(
-                entityManager -> entityManager.find(InteractivePrivacyEndpoint.class, newId));
+                entityManager -> entityManager.find(InteractivePrivacyEndpoint.class, id));
     
         return Optional.ofNullable(interactivePrivacyEndpoint);
     }

@@ -22,8 +22,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tuweni.bytes.Bytes;
+
 import com.quorum.tessera.data.InteractivePrivacyEndpointDAO;
 import com.quorum.tessera.data.InteractivePrivacyEndpoint;
+import org.hyperledger.besu.ethereum.privacy.PrivateTransaction;
+import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
+import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
+import org.hyperledger.besu.ethereum.rlp.RLPInput;
+import extended.privacy.PrivateDataExtractor;
+import org.hyperledger.besu.datatypes.Address;
 
 public class TransactionManagerImpl implements TransactionManager {
 
@@ -44,6 +52,8 @@ public class TransactionManagerImpl implements TransactionManager {
   private final PrivacyHelper privacyHelper;
 
   private final PayloadDigest payloadDigest;
+
+  private final Base64.Decoder base64Decoder = Base64.getDecoder();
 
   public TransactionManagerImpl(
       Enclave enclave,
@@ -71,6 +81,8 @@ public class TransactionManagerImpl implements TransactionManager {
   @Override
   public SendResponse send(SendRequest sendRequest) {
 
+    /*LOG*/System.out.println(" >>> [TransactionManagerImpl] send()");
+
     final PublicKey senderPublicKey = sendRequest.getSender();
     final List<PublicKey> recipientList = new ArrayList<>(sendRequest.getRecipients());
     recipientList.add(senderPublicKey);
@@ -84,8 +96,6 @@ public class TransactionManagerImpl implements TransactionManager {
     final PrivacyMode privacyMode = sendRequest.getPrivacyMode();
 
     final byte[] execHash = sendRequest.getExecHash();
-
-    //final int listeningPort = sendRequest.getListeningPort();
 
     final List<AffectedTransaction> affectedContractTransactions =
         privacyHelper.findAffectedContractTransactionsFromSendRequest(
@@ -104,7 +114,6 @@ public class TransactionManagerImpl implements TransactionManager {
             .withExecHash(execHash)
             .withMandatoryRecipients(sendRequest.getMandatoryRecipients());
     sendRequest.getPrivacyGroupId().ifPresent(metadataBuilder::withPrivacyGroupId);
-    sendRequest.getListeningPort().ifPresent(metadataBuilder::withListeningPort);
 
     final EncodedPayload payload =
         enclave.encryptPayload(
@@ -139,6 +148,112 @@ public class TransactionManagerImpl implements TransactionManager {
 
     return SendResponse.Builder.create()
         .withMessageHash(transactionHash)
+        .withManagedParties(managedParties)
+        .withSender(payload.getSenderKey())
+        .build();
+  }
+
+
+  @Override
+  public SendResponse sendPrivate(SendRequest sendRequest) {
+
+    // DONE: extract private arguments from the transaction
+    byte[] dec = base64Decoder.decode(sendRequest.getPayload());
+    Bytes bdec = Bytes.wrap(dec);
+    RLPInput rlpInput = new BytesValueRLPInput(bdec, true);
+    PrivateTransaction privTx = PrivateTransaction.readFrom(rlpInput);
+    PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privTx);
+    PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
+
+    BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
+    blindedTx.writeTo(rlpOutput);
+    final byte[] blindedRaw = rlpOutput.encoded().toBase64String().getBytes();
+    final byte[] raw = sendRequest.getPayload();
+    //////////////////////////////
+
+    final PublicKey senderPublicKey = sendRequest.getSender();
+    final List<PublicKey> recipientList = new ArrayList<>(sendRequest.getRecipients());
+    recipientList.add(senderPublicKey);
+    recipientList.addAll(enclave.getForwardingKeys());
+
+    final List<PublicKey> recipientListNoDuplicate =
+        recipientList.stream().distinct().collect(Collectors.toList());
+
+    //final byte[] raw = sendRequest.getPayload();
+
+    final PrivacyMode privacyMode = sendRequest.getPrivacyMode();
+
+    final byte[] execHash = sendRequest.getExecHash();
+
+    //final int listeningPort = sendRequest.getListeningPort();
+
+    final List<AffectedTransaction> affectedContractTransactions =
+        privacyHelper.findAffectedContractTransactionsFromSendRequest(
+            sendRequest.getAffectedContractTransactions());
+
+    privacyHelper.validateSendRequest(
+        privacyMode,
+        recipientList,
+        affectedContractTransactions,
+        sendRequest.getMandatoryRecipients());
+
+    final PrivacyMetadata.Builder metadataBuilder =
+        PrivacyMetadata.Builder.create()
+            .withPrivacyMode(privacyMode)
+            .withAffectedTransactions(affectedContractTransactions)
+            .withExecHash(execHash)
+            .withMandatoryRecipients(sendRequest.getMandatoryRecipients());
+    sendRequest.getPrivacyGroupId().ifPresent(metadataBuilder::withPrivacyGroupId);
+    sendRequest.getListeningPort().ifPresent(metadataBuilder::withListeningPort);
+    /*LOG*/System.out.println(" >>> [TxManagerImpl] getContractAddress().isPresent()");
+    /*LOG*/System.out.println(sendRequest.getContractAddress().isPresent());
+    sendRequest.getContractAddress().ifPresent(metadataBuilder::withContractAddress);
+
+    final EncodedPayload blindedPayload = 
+        enclave.encryptPayload(
+          blindedRaw, senderPublicKey, recipientListNoDuplicate, metadataBuilder.build());
+    final EncodedPayload payload =
+        enclave.encryptPayload(
+            raw, senderPublicKey, recipientListNoDuplicate, metadataBuilder.build());
+
+    final MessageHash blindedTransactionHash = 
+        Optional.of(blindedPayload)
+            .map(EncodedPayload::getCipherText)
+            .map(payloadDigest::digest)
+            .map(MessageHash::new)
+            .get();
+
+    final MessageHash transactionHash =
+        Optional.of(payload)
+            .map(EncodedPayload::getCipherText)
+            .map(payloadDigest::digest)
+            .map(MessageHash::new)
+            .get();
+
+    final EncryptedTransaction blindedNewTransaction = new EncryptedTransaction(blindedTransactionHash, blindedPayload);
+    final EncryptedTransaction newTransaction = new EncryptedTransaction(blindedTransactionHash, payload);
+
+    final Set<PublicKey> managedPublicKeys = enclave.getPublicKeys();
+    final Set<PublicKey> managedParties =
+        Stream.concat(Stream.of(senderPublicKey), recipientListNoDuplicate.stream())
+            .filter(managedPublicKeys::contains)
+            .collect(Collectors.toSet());
+
+    final List<PublicKey> recipientListRemotesOnly =
+        recipientListNoDuplicate.stream()
+            .filter(not(managedPublicKeys::contains))
+            .collect(Collectors.toList());
+
+    this.encryptedTransactionDAO.save(
+        newTransaction,
+        () -> {
+          batchPayloadPublisher.publishPayload(blindedPayload, recipientListRemotesOnly);
+          return null;
+        });
+
+    // Changed "transactionHash" for "blindedTransactionHash"
+    return SendResponse.Builder.create()
+        .withMessageHash(blindedTransactionHash)
         .withManagedParties(managedParties)
         .withSender(payload.getSenderKey())
         .build();
@@ -347,16 +462,16 @@ public class TransactionManagerImpl implements TransactionManager {
   }
 
   @Override
-  public synchronized boolean storeEndpoint(MessageHash transactionHash, int port) {
+  public synchronized boolean storeEndpoint(Address contractAddress, int port) {
 
-    byte[] id = transactionHash.getHashBytes();
+    byte[] id = contractAddress.copy().toArray();
 
     InteractivePrivacyEndpoint endpoint = new InteractivePrivacyEndpoint(id, port);
 
     this.interactivePrivacyEndpointDAO.save(endpoint);
 
     /*LOG*/System.out.println(" >>> [TransactionResource] the port has been saved");
-    Optional<InteractivePrivacyEndpoint> retrievedPort = this.interactivePrivacyEndpointDAO.findById(transactionHash);
+    Optional<InteractivePrivacyEndpoint> retrievedPort = this.interactivePrivacyEndpointDAO.findById(id);
     if(retrievedPort.isPresent()){
         /*LOG*/System.out.printf(" >>> [TransactionResource] retrieved port: %d\n", retrievedPort.get().getPort());
     }else{
@@ -367,9 +482,11 @@ public class TransactionManagerImpl implements TransactionManager {
   }
 
   @Override
-  public synchronized int getEndpoint(MessageHash hash) {
-    //MessageHash h = new MessageHash(hash);
-    Optional<InteractivePrivacyEndpoint> endpoint = this.interactivePrivacyEndpointDAO.findById(hash);
+  public synchronized int getEndpoint(Address contractAddress) {
+
+    byte[] id = contractAddress.copy().toArray();
+
+    Optional<InteractivePrivacyEndpoint> endpoint = this.interactivePrivacyEndpointDAO.findById(id);
     int port = 0;
     
     if(endpoint.isPresent()){

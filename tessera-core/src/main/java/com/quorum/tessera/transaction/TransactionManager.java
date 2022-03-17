@@ -8,9 +8,13 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import org.hyperledger.besu.datatypes.Address;
+
 public interface TransactionManager {
 
   SendResponse send(SendRequest sendRequest);
+
+  SendResponse sendPrivate(SendRequest sendRequest);
 
   SendResponse sendSignedTransaction(SendSignedRequest sendRequest);
 
@@ -18,9 +22,9 @@ public interface TransactionManager {
 
   MessageHash storePayload(EncodedPayload transactionPayload);
 
-  boolean storeEndpoint(MessageHash transactionHash, int port);
+  boolean storeEndpoint(Address contractAddres, int port);
 
-  int getEndpoint(MessageHash hash);
+  int getEndpoint(Address contractAddres);
 
   ReceiveResponse receive(ReceiveRequest request);
 

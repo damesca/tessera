@@ -8,6 +8,8 @@ module tessera.enclave.api {
   requires com.fasterxml.jackson.databind;
   requires com.fasterxml.jackson.dataformat.cbor;
 
+  requires tessera.datatypes;
+
   exports com.quorum.tessera.enclave;
 
   uses com.quorum.tessera.enclave.PayloadEncoder;

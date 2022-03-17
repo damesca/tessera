@@ -33,6 +33,12 @@ dependencies {
   implementation "org.apache.tuweni:tuweni-bytes:2.0.0"
   implementation "org.apache.tuweni:tuweni-units:2.0.0"
   implementation "com.google.guava:guava"
+
+  implementation project(":privacy")
+  implementation project(":rlp")
+  implementation project(":plugin-api")
+  implementation project(":extended-privacy")
+  implementation project(":datatypes")
 }
 
 sourceSets {

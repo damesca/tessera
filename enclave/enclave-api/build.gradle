@@ -12,7 +12,10 @@ dependencies {
   implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
   implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
 
-
+  implementation project(":datatypes")
+  implementation project(":plugin-api")
+  implementation "org.apache.tuweni:tuweni-bytes"
+  //implementation "org.eclipse.persistence:org.eclipse.persistence.moxy:3.1.0-M1"
 
   testImplementation "org.apache.tuweni:tuweni-rlp"
   testImplementation "org.apache.tuweni:tuweni-bytes"

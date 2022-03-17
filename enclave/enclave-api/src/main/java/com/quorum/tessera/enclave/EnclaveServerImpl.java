@@ -43,6 +43,7 @@ class EnclaveServerImpl implements EnclaveServer {
       RawTransaction rawTransaction,
       List<PublicKey> recipientPublicKeys,
       PrivacyMetadata privacyMetadata) {
+        /*LOG*/System.out.println(" >> [EnclaveServerImpl] encryptPayload()");
     return enclave.encryptPayload(rawTransaction, recipientPublicKeys, privacyMetadata);
   }
 

@@ -5,6 +5,9 @@ plugins {
 
 dependencies {
 
+  implementation project(":datatypes")
+  implementation 'org.apache.tuweni:tuweni-bytes'
+
   implementation project(":tessera-jaxrs:common-jaxrs")
   implementation project(":security")
   implementation project(":shared")

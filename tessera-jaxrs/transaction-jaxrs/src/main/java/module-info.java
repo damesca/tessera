@@ -18,6 +18,7 @@ module tessera.transaction.jaxrs {
   requires tessera.privacy;
   requires tessera.rlp;
   requires tessera.extended.privacy;
+  requires tessera.datatypes;
 
   exports com.quorum.tessera.q2t;
 

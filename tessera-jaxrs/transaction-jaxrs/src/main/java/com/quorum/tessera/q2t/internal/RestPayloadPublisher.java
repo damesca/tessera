@@ -25,6 +25,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 
 public class RestPayloadPublisher implements PayloadPublisher {
 
@@ -66,7 +67,21 @@ public class RestPayloadPublisher implements PayloadPublisher {
     final String targetUrl = remoteNodeInfo.getUrl();
     LOGGER.info("Publishing message to {}", targetUrl);
 
+    /*LOG*/System.out.println(" >>> [RestPayloadPublisher] listeningPort");
+    if(payload.getListeningPort().isPresent()){
+      /*LOG*/System.out.println(payload.getListeningPort().get());
+    }else{
+      /*LOG*/System.out.println("no port");
+    }
+    /*LOG*/System.out.println(" >>> [RestPayloadPublisher] contractAddress");
+    if(payload.getContractAddress().isPresent()){
+    /*LOG*/System.out.println(Bytes.wrap(payload.getContractAddress().get()).toHexString());
+    }else{
+      /*LOG*/System.out.println("no contract address");
+    }
     final byte[] encoded = payloadEncoder.encode(payload);
+    /*LOG*/System.out.println(" >>> [RestPayloadPublisher] encodedPayload");
+    /*LOG*/System.out.println(Bytes.wrap(encoded).toHexString());
 
     try (Response response =
         client

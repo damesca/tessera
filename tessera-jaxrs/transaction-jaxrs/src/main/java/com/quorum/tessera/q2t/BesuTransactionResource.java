@@ -24,6 +24,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +45,9 @@ import extended.privacy.ObliviousTransferServer;
 import extended.privacy.ObliviousTransferClient;
 import java.util.Arrays;
 import java.util.Random;
+import extended.privacy.ContractAddress;
+import org.hyperledger.besu.datatypes.Address;
+import org.apache.tuweni.bytes.DelegatingBytes;
 
 @Tag(name = "quorum-to-tessera")
 @Path("/")
@@ -128,7 +132,6 @@ public class BesuTransactionResource {
             PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privateTransaction);
             PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
             Bytes privateArguments = dataExtractor.getPrivateArguments();
-            System.out.println(blindedTx.toString());
         
             // TODO: save privateData into database
 
@@ -150,7 +153,10 @@ public class BesuTransactionResource {
             BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
             blindedTx.writeTo(rlpOutput);
             String stringBlindedPayload = rlpOutput.encoded().toBase64String();
-            sendRequestPayload = rlpOutput.encoded().toBase64String().getBytes();
+            //sendRequestPayload = rlpOutput.encoded().toBase64String().getBytes();
+
+            // The original Transaction is sent to the TxManager because it handles now the private data extraction
+            sendRequestPayload = sendRequest.getPayload();
         } else {
             // It is not a contract creation
 
@@ -161,9 +167,13 @@ public class BesuTransactionResource {
             // TODO: connect to a listener point
             // TODO: get the listeningPort dynamically
 
-            //byte[] hash = base64Decoder.decode(sendRequest.getExecHash().getBytes());
-            //int port = 0;
-            int port = this.transactionManager.getEndpoint(new MessageHash(execHash));
+
+            int port = 0;
+            Optional<Address> contractAddress = privateTransaction.getTo();
+            if(contractAddress.isPresent()){
+                port = this.transactionManager.getEndpoint(contractAddress.get());
+            }
+            
             /*LOG*/System.out.printf(" >> [BesuTransactionResource] retrievedPort: %d\n", port);
 
             System.out.println("Executing OTClient...");
@@ -199,8 +209,32 @@ public class BesuTransactionResource {
           requestBuilder.withPrivacyGroupId(legacyGroup.getId());
         });
     
+    com.quorum.tessera.transaction.SendResponse response = null;
+    if(privateTransaction.getOtWith().compareTo(Bytes.ofUnsignedShort(0)) == 0) {
+        // It is not a otWith transaction
+        response =
+            transactionManager.send(requestBuilder.build());
+    } else {
+        if(privateTransaction.isContractCreation()) {
+            Address contractAddress = ContractAddress.privateContractAddress(
+                privateTransaction.getSender(),
+                privateTransaction.getNonce(),
+                privateTransaction.determinePrivacyGroupId()
+            );
+            /*LOG*/System.out.println("## [ContractAddress] ##");
+            /*LOG*/System.out.println(contractAddress);
+            requestBuilder.withContractAddress(contractAddress);
+            response =
+                transactionManager.sendPrivate(requestBuilder.build());
+        }else{
+            response =
+                transactionManager.send(requestBuilder.build());
+        }
+    }
+    /*
     final com.quorum.tessera.transaction.SendResponse response =
         transactionManager.send(requestBuilder.build());
+    */
 
     final String encodedKey =
         Optional.of(response)

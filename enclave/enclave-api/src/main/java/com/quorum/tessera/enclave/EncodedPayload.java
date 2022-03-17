@@ -7,6 +7,8 @@ import com.quorum.tessera.encryption.PublicKey;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.hyperledger.besu.datatypes.Address;
+
 /** This class contains the data that is sent to other nodes */
 public class EncodedPayload {
 
@@ -34,6 +36,8 @@ public class EncodedPayload {
 
   private final int listeningPort;
 
+  private final Address contractAddress;
+
   private EncodedPayload(
       final PublicKey senderKey,
       final byte[] cipherText,
@@ -46,7 +50,8 @@ public class EncodedPayload {
       final byte[] execHash,
       final PrivacyGroup.Id privacyGroupId,
       final Set<PublicKey> mandatoryRecipients,
-      final int listeningPort) {
+      final int listeningPort,
+      final Address contractAddress) {
     this.senderKey = senderKey;
     this.cipherText = cipherText;
     this.cipherTextNonce = cipherTextNonce;
@@ -59,6 +64,7 @@ public class EncodedPayload {
     this.privacyGroupId = privacyGroupId;
     this.mandatoryRecipients = mandatoryRecipients;
     this.listeningPort = listeningPort;
+    this.contractAddress = contractAddress;
   }
 
   public PublicKey getSenderKey() {
@@ -109,6 +115,10 @@ public class EncodedPayload {
     return Optional.ofNullable(listeningPort);
   }
 
+  public Optional<Address> getContractAddress() {
+    return Optional.ofNullable(contractAddress);
+  }
+
   public static class Builder {
 
     private Builder() {}
@@ -141,6 +151,7 @@ public class EncodedPayload {
 
       encodedPayload.getPrivacyGroupId().ifPresent(builder::withPrivacyGroupId);
       encodedPayload.getListeningPort().ifPresent(builder::withListeningPort);
+      encodedPayload.getContractAddress().ifPresent(builder::withContractAddress);
 
       return builder;
     }
@@ -205,6 +216,8 @@ public class EncodedPayload {
     private Set<PublicKey> mandatoryRecipients = Collections.emptySet();
 
     private int listeningPort;
+
+    private Address contractAddress;
 
     public Builder withSenderKey(final PublicKey senderKey) {
       this.senderKey = senderKey;
@@ -298,6 +311,11 @@ public class EncodedPayload {
       return this;
     }
 
+    public Builder withContractAddress(final Address contractAddress) {
+      this.contractAddress = contractAddress;
+      return this;
+    }
+
     public EncodedPayload build() {
 
       Map<TxHash, SecurityHash> affectedTransactions =
@@ -331,7 +349,8 @@ public class EncodedPayload {
           execHash,
           privacyGroupId,
           mandatoryRecipients,
-          listeningPort);
+          listeningPort,
+          contractAddress);
     }
   }
 

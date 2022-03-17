@@ -50,6 +50,8 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation project(":plugin-api")
   implementation project(":extended-privacy")
+  implementation project(":datatypes")
+  implementation 'org.apache.tuweni:tuweni-units'
 }
 
 def generatedResources = "${project.buildDir}/generated-resources/openapi"

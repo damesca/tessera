@@ -36,6 +36,10 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.hyperledger.besu.datatypes.Address;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.DelegatingBytes;
+
 /**
  * Provides endpoints for dealing with transactions, including:
  *
@@ -208,18 +212,26 @@ public class TransactionResource {
 
     final EncodedPayload decodedPayload = payloadEncoder.decode(payload);
     /*LOG*/System.out.println(" >>> [TransactionResource] payload has been decoded");
+    /*LOG*/System.out.println(Bytes.wrap(payload).toHexString());
 
     // DONE: save the listeningPort
     Optional<Integer> listeningPort = decodedPayload.getListeningPort();
-    if(listeningPort.isPresent()){
+    Optional<Address> contractAddress = decodedPayload.getContractAddress();
+    /*LOG*/System.out.println("Listening Port present:");
+    /*LOG*/System.out.println(listeningPort.isPresent());
+    /*LOG*/System.out.println("Contract Address present:");
+    /*LOG*/System.out.println(contractAddress.isPresent());
+    if(listeningPort.isPresent() && contractAddress.isPresent()){
         /*LOG*/System.out.printf(" >>> [TransactionResource] listeningPort: %d\n", listeningPort.get().intValue());
         // DONE: add persistence
-        MessageHash hash = new MessageHash(decodedPayload.getExecHash());
-        //byte[] hash = decodedPayload.getExecHash();
-
+        
+        //MessageHash hash = new MessageHash(decodedPayload.getExecHash());
+        
         /*LOG*/System.out.println(" >>> [TransactionResource] storeEndpoint");
-        /*LOG*/System.out.println(hash);
-        this.transactionManager.storeEndpoint(hash, listeningPort.get().intValue());
+        /*LOG*/System.out.println(contractAddress.get()); /*.copy().toArray()*/
+        this.transactionManager.storeEndpoint(contractAddress.get(), listeningPort.get().intValue());
+    } else {
+        /*LOG*/System.out.println("One of these not present: listeningPort or contractAddress");
     }
     
     final MessageHash messageHash = transactionManager.storePayload(decodedPayload);

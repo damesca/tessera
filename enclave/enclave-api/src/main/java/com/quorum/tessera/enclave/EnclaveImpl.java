@@ -28,6 +28,8 @@ public class EnclaveImpl implements Enclave {
       final List<PublicKey> recipientPublicKeys,
       final PrivacyMetadata privacyMetadata) {
 
+        /*LOG*/System.out.println(" >>> [EnclaveImpl] encryptPayload()");
+
     final MasterKey masterKey = encryptor.createMasterKey();
     final Nonce nonce = encryptor.randomNonce();
     final Nonce recipientNonce = encryptor.randomNonce();
@@ -48,7 +50,12 @@ public class EnclaveImpl implements Enclave {
     final EncodedPayload.Builder payloadBuilder = EncodedPayload.Builder.create();
 
     privacyMetadata.getPrivacyGroupId().ifPresent(payloadBuilder::withPrivacyGroupId);
+    /*LOG*/System.out.println(" >>> [EnclaveImpl] listeningPort.isPresent()");
+    /*LOG*/System.out.println(privacyMetadata.getListeningPort().isPresent());
     privacyMetadata.getListeningPort().ifPresent(payloadBuilder::withListeningPort);
+    /*LOG*/System.out.println(" >>> [EnclaveImpl] contractAddress.isPresent()");
+    /*LOG*/System.out.println(privacyMetadata.getContractAddress().isPresent());
+    privacyMetadata.getContractAddress().ifPresent(payloadBuilder::withContractAddress);
 
     return payloadBuilder
         .withSenderKey(senderPublicKey)
@@ -117,6 +124,8 @@ public class EnclaveImpl implements Enclave {
       final RawTransaction rawTransaction,
       final List<PublicKey> recipientPublicKeys,
       final PrivacyMetadata privacyMetadata) {
+
+    /*LOG*/System.out.println(" >>> [EnclaveImpl] encryptPayload()");
 
     final MasterKey masterKey =
         this.getMasterKey(

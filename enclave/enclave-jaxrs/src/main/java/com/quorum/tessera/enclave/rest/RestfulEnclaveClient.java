@@ -99,6 +99,8 @@ public class RestfulEnclaveClient implements EnclaveClient {
       final List<PublicKey> recipientPublicKeys,
       final PrivacyMetadata privacyMetaData) {
 
+        /*LOG*/System.out.println(" >>> [RestfulEnclaveClient] encryptPayload()");
+
     return ClientCallback.execute(
         () -> {
           EnclavePayload enclavePayload = new EnclavePayload();

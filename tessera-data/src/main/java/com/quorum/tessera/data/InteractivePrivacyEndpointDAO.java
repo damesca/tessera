@@ -8,7 +8,7 @@ public interface InteractivePrivacyEndpointDAO {
     
     InteractivePrivacyEndpoint save(InteractivePrivacyEndpoint entity);
 
-    Optional<InteractivePrivacyEndpoint> findById(MessageHash id);
+    Optional<InteractivePrivacyEndpoint> findById(byte[] id);
 
     //Optional<InteractivePrivacyEndpoint> retrieveByHash(MessageHash hash);
 
