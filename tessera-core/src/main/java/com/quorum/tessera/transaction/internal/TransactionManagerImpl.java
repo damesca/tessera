@@ -81,7 +81,6 @@ public class TransactionManagerImpl implements TransactionManager {
   @Override
   public SendResponse send(SendRequest sendRequest) {
 
-    /*LOG*/System.out.println(" >>> [TransactionManagerImpl] send()");
 
     final PublicKey senderPublicKey = sendRequest.getSender();
     final List<PublicKey> recipientList = new ArrayList<>(sendRequest.getRecipients());
@@ -162,8 +161,11 @@ public class TransactionManagerImpl implements TransactionManager {
     Bytes bdec = Bytes.wrap(dec);
     RLPInput rlpInput = new BytesValueRLPInput(bdec, true);
     PrivateTransaction privTx = PrivateTransaction.readFrom(rlpInput);
-    PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privTx);
+    PrivateDataExtractor dataExtractor = PrivateDataExtractor.blindPrivateArguments(privTx);
     PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
+
+    /*LOG*/System.out.println(" >>> [TransactionManagerImpl] sendPrivate()");
+    /*LOG*/System.out.println(blindedTx.toString());
 
     BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
     blindedTx.writeTo(rlpOutput);
@@ -232,6 +234,7 @@ public class TransactionManagerImpl implements TransactionManager {
 
     final EncryptedTransaction blindedNewTransaction = new EncryptedTransaction(blindedTransactionHash, blindedPayload);
     final EncryptedTransaction newTransaction = new EncryptedTransaction(blindedTransactionHash, payload);
+    //final EncryptedTransaction newTransaction = new EncryptedTransaction(transactionHash, payload);
 
     final Set<PublicKey> managedPublicKeys = enclave.getPublicKeys();
     final Set<PublicKey> managedParties =
@@ -244,16 +247,21 @@ public class TransactionManagerImpl implements TransactionManager {
             .filter(not(managedPublicKeys::contains))
             .collect(Collectors.toList());
 
+    /*LOG*/System.out.println(" >>> [TransactionManagerImpl] sendPrivate() ---> DAO.save()");
+    /*LOG*/System.out.println(blindedTransactionHash.toString());
+    /*LOG*/System.out.println(privTx.toString());
     this.encryptedTransactionDAO.save(
-        newTransaction,
+        newTransaction /*blindedNewTransaction*/,
         () -> {
           batchPayloadPublisher.publishPayload(blindedPayload, recipientListRemotesOnly);
+          //batchPayloadPublisher.publishPayload(payload, recipientListRemotesOnly);
           return null;
         });
 
     // Changed "transactionHash" for "blindedTransactionHash"
     return SendResponse.Builder.create()
         .withMessageHash(blindedTransactionHash)
+        //.withMessageHash(transactionHash)
         .withManagedParties(managedParties)
         .withSender(payload.getSenderKey())
         .build();
@@ -338,7 +346,11 @@ public class TransactionManagerImpl implements TransactionManager {
   @Override
   public synchronized MessageHash storePayload(final EncodedPayload payload) {
 
-    LOGGER.info("\n[TransactionManagerImpl] storePayload(payload)\n");
+    /*LOG*/System.out.println("[TransactionManagerImpl] storePayload() --> unencrypt");
+    //byte[] cipherText = payload.getCipherText();
+    //byte[] unencrypted = enclave.unencryptTransaction(payload, payload.getSenderKey());
+    ///*LOG*/System.out.println(Bytes.wrap(unencrypted).toHexString());
+
     final byte[] digest = payloadDigest.digest(payload.getCipherText());
     final MessageHash transactionHash = new MessageHash(digest);
     final List<AffectedTransaction> affectedContractTransactions =
@@ -346,6 +358,7 @@ public class TransactionManagerImpl implements TransactionManager {
 
     final TxHash txHash = TxHash.from(transactionHash.getHashBytes());
     if (!privacyHelper.validatePayload(txHash, payload, affectedContractTransactions)) {
+      /*LOG*/System.out.println(" >>> [TransactionManagerImpl] storePayload() --> payload not valid");
       return transactionHash;
     }
 
@@ -505,6 +518,8 @@ public class TransactionManagerImpl implements TransactionManager {
   @Override
   public ReceiveResponse receive(ReceiveRequest request) {
 
+    /*LOG*/System.out.println(" >>> [TransactionManagerImpl] receive()");
+
     final MessageHash hash = request.getTransactionHash();
     LOGGER.info("Lookup transaction {}", hash);
 
@@ -561,6 +576,16 @@ public class TransactionManagerImpl implements TransactionManager {
                                     + hash)));
 
     byte[] unencryptedTransactionData = enclave.unencryptTransaction(payload, recipientKey);
+
+
+    /*LOG*/System.out.println(" >>> [TransactionManagerImpl] receive() --> UnencryptedTransactionData");
+    ///*LOG*/System.out.println(Bytes.wrap(unencryptedTransactionData).toHexString());
+    //Bytes bdec = Bytes.wrap(unencryptedTransactionData);
+    //RLPInput rlpInput = new BytesValueRLPInput(bdec, true);
+    //PrivateTransaction privTx = PrivateTransaction.readFrom(rlpInput);
+    //PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privTx);
+    //PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
+    ///*LOG*/System.out.println(privTx.toString());    
 
     Set<MessageHash> affectedTransactions =
         payload.getAffectedContractTransactions().keySet().stream()

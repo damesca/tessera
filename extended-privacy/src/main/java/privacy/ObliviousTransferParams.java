@@ -15,6 +15,7 @@ public class ObliviousTransferParams {
     private static final Logger LOG = LoggerFactory.getLogger(ObliviousTransferParams.class);
 
     private static final Bytes zeroBytes = Bytes.fromHexString("0000000000000000000000000000000000000000000000000000000000000000");
+    //private static final Bytes zeroBytes = Bytes.fromHexString("0000000000000000000000000000000000000000000000090909090909090909");
 
     private final Bytes senderAddr;
     private final Bytes receiverAddr;

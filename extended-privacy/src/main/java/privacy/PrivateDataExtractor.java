@@ -29,6 +29,42 @@ public class PrivateDataExtractor {
         this.privateArguments = privateArguments;
     }
 
+    public static PrivateDataExtractor blindPrivateArguments(PrivateTransaction p) {
+        Bytes args = p.getPrivateArgs();
+
+        ObliviousTransferParams otp = ObliviousTransferParams.readFrom(args);
+        Bytes privateArguments = otp.getNoInfoArgs();
+
+        final PrivateTransaction.Builder builder = PrivateTransaction.builder()
+            .gasPrice(p.getGasPrice())
+            .gasLimit(p.getGasLimit())
+            .nonce(p.getNonce())
+            .value(p.getValue())
+            .payload(p.getPayload())
+            .sender(p.getSender())
+            .signature(p.getSignature())
+            .privateFrom(p.getPrivateFrom())
+            .restriction(p.getRestriction())
+            .otWith(p.getOtWith())
+            .privateArgs(privateArguments)
+            .extSignature(p.getExtSignature());
+
+            
+        p.getTo().ifPresent(builder::to);
+        p.getChainId().ifPresent(builder::chainId);
+        p.getPrivateFor().ifPresent(builder::privateFor);
+        p.getPrivacyGroupId().ifPresent(builder::privacyGroupId);
+
+        PrivateTransaction blindedTransaction = builder.build();
+        
+        return new PrivateDataExtractor(
+            p,
+            blindedTransaction,
+            privateArguments
+        );
+    }
+
+    // Legacy method, currently not in use
     public static PrivateDataExtractor extractArguments(PrivateTransaction p) {
         // TODO: better reading of the values using RLP
         Bytes payload = p.getPayload();

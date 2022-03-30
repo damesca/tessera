@@ -59,8 +59,8 @@ public class SendRequest {
   private String[] mandatoryRecipients;
 
   // TODO: delete privateData
-  @Schema(description = "private data which has to be locally stored", type = "string", format = "base64")
-  private byte[] privateData;
+  //@Schema(description = "private data which has to be locally stored", type = "string", format = "base64")
+  //private byte[] privateData;
 
   public byte[] getPayload() {
     return this.payload;
@@ -126,11 +126,11 @@ public class SendRequest {
     this.mandatoryRecipients = mandatoryRecipients;
   }
 
-  public byte[] getPrivateData() {
-    return this.privateData;
-  }
+ // public byte[] getPrivateData() {
+ //   return this.privateData;
+ // }
 
-  public void setPrivateData(final byte[] privateData) {
-    this.privateData = privateData;
-  }
+  //public void setPrivateData(final byte[] privateData) {
+  //  this.privateData = privateData;
+  //}
 }

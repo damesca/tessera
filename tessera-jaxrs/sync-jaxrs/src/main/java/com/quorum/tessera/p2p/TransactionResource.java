@@ -198,7 +198,7 @@ public class TransactionResource {
           final List<String> headers) {
 
     LOGGER.debug("Received push request");
-    /*LOG*/System.out.println(" >>> [Received push request]");
+    /*LOG*/System.out.println(" >>> [TransactionResource] Received push request");
 
     final Set<String> versions =
         Optional.ofNullable(headers).orElse(emptyList()).stream()
@@ -211,8 +211,11 @@ public class TransactionResource {
     final PayloadEncoder payloadEncoder = PayloadEncoder.create(codec);
 
     final EncodedPayload decodedPayload = payloadEncoder.decode(payload);
-    /*LOG*/System.out.println(" >>> [TransactionResource] payload has been decoded");
-    /*LOG*/System.out.println(Bytes.wrap(payload).toHexString());
+
+    final Base64.Decoder base64Decoder = Base64.getDecoder();
+
+    /*LOG*/System.out.println(" >>> [TransactionResource] push() --> payload has been decoded");
+    ///*LOG*/System.out.println(Bytes.wrap(base64Decoder.decode(payload)).toHexString());
 
     // DONE: save the listeningPort
     Optional<Integer> listeningPort = decodedPayload.getListeningPort();

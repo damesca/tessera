@@ -129,15 +129,14 @@ public class BesuTransactionResource {
         if(privateTransaction.isContractCreation()) {
             // It is a contract creation
 
-            PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privateTransaction);
-            PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
-            Bytes privateArguments = dataExtractor.getPrivateArguments();
+            //PrivateDataExtractor dataExtractor = PrivateDataExtractor.extractArguments(privateTransaction);
+            //PrivateTransaction blindedTx = dataExtractor.getBlindedTransaction();
+            //Bytes privateArguments = dataExtractor.getPrivateArguments();
+            Bytes privateArguments = privateTransaction.getPrivateArgs();
+            /*LOG*/System.out.println(privateArguments.toHexString());
         
             // TODO: save privateData into database
 
-            // DONE: establish a new listener point
-            // DONE: get listingPort dynamically
-            // TODO: persist the ports which are in use
             Random rndGenerator = new Random();
             listeningPort = rndGenerator.nextInt(1000)+6000; // Extract a port from 6000 to (6000+1000)
 
@@ -151,7 +150,7 @@ public class BesuTransactionResource {
             // DONE: send the endPoint port to the destination Tessera node (using requestBuilder)
 
             BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
-            blindedTx.writeTo(rlpOutput);
+            privateTransaction.writeTo(rlpOutput);
             String stringBlindedPayload = rlpOutput.encoded().toBase64String();
             //sendRequestPayload = rlpOutput.encoded().toBase64String().getBytes();
 
@@ -171,7 +170,11 @@ public class BesuTransactionResource {
             int port = 0;
             Optional<Address> contractAddress = privateTransaction.getTo();
             if(contractAddress.isPresent()){
+                /*LOG*/System.out.println(" >>> [BesuTransactionResource] get transaction endPoint");
+                /*LOG*/System.out.println(contractAddress.get().toHexString());
                 port = this.transactionManager.getEndpoint(contractAddress.get());
+            }else{
+                /*LOG*/System.out.println(" >>> [BesuTransactionResource] contractAddress is not present");
             }
             
             /*LOG*/System.out.printf(" >> [BesuTransactionResource] retrievedPort: %d\n", port);
@@ -229,6 +232,8 @@ public class BesuTransactionResource {
         }else{
             response =
                 transactionManager.send(requestBuilder.build());
+            /*LOG*/System.out.println(" >>> [BesuTransactionResource] call method");
+            /*LOG*/System.out.println(response);
         }
     }
     /*
@@ -311,6 +316,14 @@ public class BesuTransactionResource {
     com.quorum.tessera.transaction.ReceiveResponse response =
         transactionManager.receive(receiveRequest);
 
+    /*LOG*/System.out.println(" >>> [BesuTransactionResource] receive() --> txManager.receive()");
+    /*LOG*/System.out.println(transactionHash.toString());
+    ///*LOG*/System.out.println(Bytes.wrap(response.getUnencryptedTransactionData()).fromBase64String());
+    /*LOG*/System.out.println(Bytes.fromBase64String(new String(response.getUnencryptedTransactionData())).toHexString());
+
+    // TODO: retrieve PrivateOutput from database based on transactionHash
+    // TODO: insert PrivateOutput somewhere inside BesuReceiveResponse
+    
     BesuReceiveResponse receiveResponse = new BesuReceiveResponse();
     receiveResponse.setPayload(response.getUnencryptedTransactionData());
     receiveResponse.setSenderKey(response.sender().encodeToBase64());
@@ -318,6 +331,11 @@ public class BesuTransactionResource {
         .getPrivacyGroupId()
         .map(PrivacyGroup.Id::getBase64)
         .ifPresent(receiveResponse::setPrivacyGroupId);
+
+    //////// DECODE PAYLOAD AND INSPECT
+    /*LOG*/System.out.println(" >>> [BesuTransactionResource] result");
+    /*LOG*/System.out.println(Bytes.wrap(base64Decoder.decode(response.getUnencryptedTransactionData())).toHexString());
+    ///////
 
     return Response.status(Response.Status.OK)
         .type(APPLICATION_JSON)
