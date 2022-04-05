@@ -26,6 +26,10 @@ public interface TransactionManager {
 
   int getEndpoint(Address contractAddres);
 
+  boolean storePrivateOutput(String transactionHash, String privateOutput);
+
+  String getPrivateOutput(String transactionHash);
+
   ReceiveResponse receive(ReceiveRequest request);
 
   StoreRawResponse store(StoreRawRequest storeRequest);

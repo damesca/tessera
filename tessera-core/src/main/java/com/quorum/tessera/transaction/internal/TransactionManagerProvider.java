@@ -3,6 +3,7 @@ package com.quorum.tessera.transaction.internal;
 import com.quorum.tessera.data.EncryptedRawTransactionDAO;
 import com.quorum.tessera.data.EncryptedTransactionDAO;
 import com.quorum.tessera.data.InteractivePrivacyEndpointDAO;
+import com.quorum.tessera.data.PrivateOutputDAO;
 import com.quorum.tessera.enclave.Enclave;
 import com.quorum.tessera.enclave.PayloadDigest;
 import com.quorum.tessera.transaction.PrivacyHelper;
@@ -29,6 +30,7 @@ public class TransactionManagerProvider {
     final EncryptedRawTransactionDAO encryptedRawTransactionDAO =
         EncryptedRawTransactionDAO.create();
     final InteractivePrivacyEndpointDAO interactivePrivacyEndpointDAO = InteractivePrivacyEndpointDAO.create();
+    final PrivateOutputDAO privateOutputDAO = PrivateOutputDAO.create();
 
     LOGGER.debug("Creating ResendManager");
     final ResendManager resendManager = ResendManager.create();
@@ -60,6 +62,7 @@ public class TransactionManagerProvider {
             batchPayloadPublisher,
             privacyHelper,
             messageHashFactory,
-            interactivePrivacyEndpointDAO));
+            interactivePrivacyEndpointDAO,
+            privateOutputDAO));
   }
 }

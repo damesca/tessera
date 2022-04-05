@@ -97,12 +97,14 @@ public class InteractivePrivacyEndpoint implements Serializable {
 
     @Override
     public int hashCode() {
+        // TODO: fix
         //return 47 * 3 + Objects.hashCode(this.id);
         return 0;
     }
 
     @Override
     public boolean equals(final Object obj) {
+        // TODO: fix
         //return (obj instanceof InteractivePrivacyEndpoint)
         //    && Objects.equals(this.id, ((InteractivePrivacyEndpoint) obj).id);
         return true;

@@ -25,6 +25,8 @@ import org.apache.tuweni.bytes.Bytes;
 
 import com.quorum.tessera.data.InteractivePrivacyEndpointDAO;
 import com.quorum.tessera.data.InteractivePrivacyEndpoint;
+import com.quorum.tessera.data.PrivateOutputDAO;
+import com.quorum.tessera.data.PrivateOutputEntity;
 import org.hyperledger.besu.ethereum.privacy.PrivateTransaction;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
@@ -42,6 +44,8 @@ public class TransactionManagerImpl implements TransactionManager {
   private final EncryptedRawTransactionDAO encryptedRawTransactionDAO;
 
   private final InteractivePrivacyEndpointDAO interactivePrivacyEndpointDAO;
+
+  private final PrivateOutputDAO privateOutputDAO;
 
   private final BatchPayloadPublisher batchPayloadPublisher;
 
@@ -63,7 +67,8 @@ public class TransactionManagerImpl implements TransactionManager {
       BatchPayloadPublisher batchPayloadPublisher,
       PrivacyHelper privacyHelper,
       PayloadDigest payloadDigest,
-      InteractivePrivacyEndpointDAO interactivePrivacyEndpointDAO) {
+      InteractivePrivacyEndpointDAO interactivePrivacyEndpointDAO,
+      PrivateOutputDAO privateOutputDAO) {
     this.encryptedTransactionDAO =
         Objects.requireNonNull(encryptedTransactionDAO, "encryptedTransactionDAO is required");
     this.batchPayloadPublisher =
@@ -76,6 +81,7 @@ public class TransactionManagerImpl implements TransactionManager {
     this.privacyHelper = Objects.requireNonNull(privacyHelper, "privacyHelper is required");
     this.payloadDigest = Objects.requireNonNull(payloadDigest, "payloadDigest is required");
     this.interactivePrivacyEndpointDAO = Objects.requireNonNull(interactivePrivacyEndpointDAO, "interactivePrivacyEndpointDAO is required");
+    this.privateOutputDAO = Objects.requireNonNull(privateOutputDAO, "privateOutputDAO is required");
   }
 
   @Override
@@ -507,6 +513,37 @@ public class TransactionManagerImpl implements TransactionManager {
     }
     
     return port;
+  }
+
+  @Override
+  public synchronized boolean storePrivateOutput(String transactionHash, String privateOutput) {
+
+    PrivateOutputEntity outputEntity = new PrivateOutputEntity(transactionHash, privateOutput);
+
+    this.privateOutputDAO.save(outputEntity);
+
+    /*LOG*/System.out.println(" >>> [TransactionResource] the output has been saved");
+    Optional<PrivateOutputEntity> retrievedOutput = this.privateOutputDAO.findById(transactionHash);
+    if(retrievedOutput.isPresent()){
+        /*LOG*/System.out.printf(" >>> [TransactionResource] retrieved output: %s\n", retrievedOutput.get().getOutput());
+    }else{
+        /*LOG*/System.out.println(" >>> [TransactionResource] no output");
+    }
+
+    return true;
+  }
+
+  @Override
+  public synchronized String getPrivateOutput(String transactionHash) {
+
+    Optional<PrivateOutputEntity> retrievedOutput = this.privateOutputDAO.findById(transactionHash);
+    String output = "";
+    
+    if(retrievedOutput.isPresent()){
+      output = retrievedOutput.get().getOutput();
+    }
+    
+    return output;
   }
 
   @Override

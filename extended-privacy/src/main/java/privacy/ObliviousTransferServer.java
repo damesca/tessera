@@ -27,9 +27,10 @@ public class ObliviousTransferServer implements Runnable {
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             
-            String msg = in.readLine();
+            in.readLine();
+            String msg = this.messages.toHexString();
             System.out.println(msg);
-            out.println(" >> Hello!");
+            out.println(msg);
 
         }catch(IOException e){
             System.out.println(e);

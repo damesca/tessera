@@ -120,6 +120,7 @@ public class BesuTransactionResource {
 
     byte[] sendRequestPayload = null;
     int listeningPort = 0;
+    String clientResponse = "";
     // Check otWith
     if(privateTransaction.getOtWith().compareTo(Bytes.ofUnsignedShort(0)) == 0) {
         // It is not a otWith transaction
@@ -134,8 +135,7 @@ public class BesuTransactionResource {
             //Bytes privateArguments = dataExtractor.getPrivateArguments();
             Bytes privateArguments = privateTransaction.getPrivateArgs();
             /*LOG*/System.out.println(privateArguments.toHexString());
-        
-            // TODO: save privateData into database
+
 
             Random rndGenerator = new Random();
             listeningPort = rndGenerator.nextInt(1000)+6000; // Extract a port from 6000 to (6000+1000)
@@ -163,14 +163,14 @@ public class BesuTransactionResource {
 
             sendRequestPayload = sendRequest.getPayload();
 
-            // TODO: connect to a listener point
-            // TODO: get the listeningPort dynamically
+            // DONE: connect to a listener point
+            // DONE: get the listeningPort dynamically
 
 
             int port = 0;
             Optional<Address> contractAddress = privateTransaction.getTo();
             if(contractAddress.isPresent()){
-                /*LOG*/System.out.println(" >>> [BesuTransactionResource] get transaction endPoint");
+                /*LOG*/System.out.println(" >>> [BesuTransactionResource] get transaction endPoint using contract address");
                 /*LOG*/System.out.println(contractAddress.get().toHexString());
                 port = this.transactionManager.getEndpoint(contractAddress.get());
             }else{
@@ -182,10 +182,10 @@ public class BesuTransactionResource {
             System.out.println("Executing OTClient...");
             ObliviousTransferClient client = new ObliviousTransferClient();
             client.startConnection("127.0.0.1", port);
-            String response = client.sendMessage(">> hello server");
-            System.out.println(response);
+            clientResponse = client.sendMessage(">> hello server");
+            System.out.println(clientResponse.substring(clientResponse.length()-2*64, clientResponse.length()));
+            clientResponse = clientResponse.substring(clientResponse.length()-2*64, clientResponse.length());
             client.stopConnection();
-                
         }
     }
 
@@ -232,8 +232,6 @@ public class BesuTransactionResource {
         }else{
             response =
                 transactionManager.send(requestBuilder.build());
-            /*LOG*/System.out.println(" >>> [BesuTransactionResource] call method");
-            /*LOG*/System.out.println(response);
         }
     }
     /*
@@ -247,6 +245,14 @@ public class BesuTransactionResource {
             .map(MessageHash::getHashBytes)
             .map(base64Encoder::encodeToString)
             .get();
+    /*LOG*/System.out.println(" >>> [BesuTransactionResource] SendResponse");
+    /*LOG*/System.out.println(encodedKey);
+
+    // Save (encodedKey, privateOutput) in database
+    if((privateTransaction.getOtWith().compareTo(Bytes.ofUnsignedShort(0)) != 0) && (!privateTransaction.isContractCreation())){
+        /*LOG*/System.out.println(" >>> [BesuTransactionResource] save(encodedKey, privateOutput)");
+        transactionManager.storePrivateOutput(encodedKey, clientResponse);
+    }
 
     final SendResponse sendResponse =
         Optional.of(response)
@@ -296,6 +302,9 @@ public class BesuTransactionResource {
             .map(base64Decoder::decode)
             .map(MessageHash::new)
             .get();
+    
+    /*LOG*/System.out.println(" >>> [BesuTransactionResource] ReceiveRequest");
+    /*LOG*/System.out.println(transactionHash.toString());
 
     PublicKey recipient =
         Optional.of(request)
@@ -316,25 +325,26 @@ public class BesuTransactionResource {
     com.quorum.tessera.transaction.ReceiveResponse response =
         transactionManager.receive(receiveRequest);
 
-    /*LOG*/System.out.println(" >>> [BesuTransactionResource] receive() --> txManager.receive()");
-    /*LOG*/System.out.println(transactionHash.toString());
     ///*LOG*/System.out.println(Bytes.wrap(response.getUnencryptedTransactionData()).fromBase64String());
-    /*LOG*/System.out.println(Bytes.fromBase64String(new String(response.getUnencryptedTransactionData())).toHexString());
 
-    // TODO: retrieve PrivateOutput from database based on transactionHash
+    // TODO: retrieve PrivateOutput from database based on transactionHash (if it exists)
     // TODO: insert PrivateOutput somewhere inside BesuReceiveResponse
-    
+    String receivedOutput = transactionManager.getPrivateOutput(transactionHash.toString());
+    /*LOG*/System.out.println(" >>> [BesuTransactionResource] receivedOutput");
+    /*LOG*/System.out.println(receivedOutput);
+
     BesuReceiveResponse receiveResponse = new BesuReceiveResponse();
     receiveResponse.setPayload(response.getUnencryptedTransactionData());
     receiveResponse.setSenderKey(response.sender().encodeToBase64());
+    receiveResponse.setPrivateOutput(receivedOutput);
     response
         .getPrivacyGroupId()
         .map(PrivacyGroup.Id::getBase64)
         .ifPresent(receiveResponse::setPrivacyGroupId);
 
     //////// DECODE PAYLOAD AND INSPECT
-    /*LOG*/System.out.println(" >>> [BesuTransactionResource] result");
-    /*LOG*/System.out.println(Bytes.wrap(base64Decoder.decode(response.getUnencryptedTransactionData())).toHexString());
+    ///*LOG*/System.out.println(" >>> [BesuTransactionResource] result");
+    ///*LOG*/System.out.println(Bytes.wrap(base64Decoder.decode(response.getUnencryptedTransactionData())).toHexString());
     ///////
 
     return Response.status(Response.Status.OK)

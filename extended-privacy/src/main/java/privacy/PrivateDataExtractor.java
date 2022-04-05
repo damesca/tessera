@@ -12,6 +12,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import extended.privacy.PrivateSetIntersectionParams;
+
 public class PrivateDataExtractor {
     private static final Logger LOG = LoggerFactory.getLogger(PrivateDataExtractor.class);
 
@@ -32,8 +34,9 @@ public class PrivateDataExtractor {
     public static PrivateDataExtractor blindPrivateArguments(PrivateTransaction p) {
         Bytes args = p.getPrivateArgs();
 
-        ObliviousTransferParams otp = ObliviousTransferParams.readFrom(args);
-        Bytes privateArguments = otp.getNoInfoArgs();
+        //ObliviousTransferParams otp = ObliviousTransferParams.readFrom(args);
+        PrivateSetIntersectionParams params = PrivateSetIntersectionParams.readFrom(args);
+        Bytes privateArguments = params.getNoInfoArgs();
 
         final PrivateTransaction.Builder builder = PrivateTransaction.builder()
             .gasPrice(p.getGasPrice())

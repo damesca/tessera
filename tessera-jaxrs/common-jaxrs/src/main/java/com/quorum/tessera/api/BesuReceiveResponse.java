@@ -20,6 +20,9 @@ public class BesuReceiveResponse {
   @Schema(description = "privacy group id of the transaction", format = "base64")
   private String privacyGroupId;
 
+  @Schema(description = "private output", type = "string")
+  private String privateOutput;
+
   public BesuReceiveResponse() {}
 
   public byte[] getPayload() {
@@ -45,4 +48,13 @@ public class BesuReceiveResponse {
   public void setPrivacyGroupId(String privacyGroupId) {
     this.privacyGroupId = privacyGroupId;
   }
+  
+  public String getPrivateOutput() {
+    return privateOutput;
+  }
+
+  public void setPrivateOutput(String privateOutput) {
+    this.privateOutput = privateOutput;
+  }
+  
 }
