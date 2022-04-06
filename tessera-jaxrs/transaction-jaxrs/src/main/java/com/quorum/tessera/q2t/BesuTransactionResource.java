@@ -166,6 +166,7 @@ public class BesuTransactionResource {
             // DONE: connect to a listener point
             // DONE: get the listeningPort dynamically
 
+            Bytes privateArguments = privateTransaction.getPrivateArgs();
 
             int port = 0;
             Optional<Address> contractAddress = privateTransaction.getTo();
@@ -182,9 +183,9 @@ public class BesuTransactionResource {
             System.out.println("Executing OTClient...");
             ObliviousTransferClient client = new ObliviousTransferClient();
             client.startConnection("127.0.0.1", port);
-            clientResponse = client.sendMessage(">> hello server");
-            System.out.println(clientResponse.substring(clientResponse.length()-2*64, clientResponse.length()));
-            clientResponse = clientResponse.substring(clientResponse.length()-2*64, clientResponse.length());
+            clientResponse = client.sendMessage(privateArguments.toHexString());
+            //System.out.println(clientResponse.substring(clientResponse.length()-2*64, clientResponse.length()));
+            //clientResponse = clientResponse.substring(clientResponse.length()-2*64, clientResponse.length());
             client.stopConnection();
         }
     }
