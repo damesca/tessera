@@ -13,6 +13,7 @@ import com.quorum.tessera.transaction.exception.MandatoryRecipientsNotAvailableE
 import com.quorum.tessera.transaction.exception.RecipientKeyNotFoundException;
 import com.quorum.tessera.transaction.exception.TransactionNotFoundException;
 import com.quorum.tessera.transaction.publish.BatchPayloadPublisher;
+import com.quorum.tessera.transaction.publish.ExtendedPrivacyPublisher;
 import com.quorum.tessera.transaction.resend.ResendManager;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,6 +39,8 @@ public class TransactionManagerImpl implements TransactionManager {
 
   private final PayloadDigest payloadDigest;
 
+  private final ExtendedPrivacyPublisher extendedPrivacyPublisher;
+
   public TransactionManagerImpl(
       Enclave enclave,
       EncryptedTransactionDAO encryptedTransactionDAO,
@@ -45,7 +48,8 @@ public class TransactionManagerImpl implements TransactionManager {
       ResendManager resendManager,
       BatchPayloadPublisher batchPayloadPublisher,
       PrivacyHelper privacyHelper,
-      PayloadDigest payloadDigest) {
+      PayloadDigest payloadDigest,
+      ExtendedPrivacyPublisher extendedPrivacyPublisher) {
     this.encryptedTransactionDAO =
         Objects.requireNonNull(encryptedTransactionDAO, "encryptedTransactionDAO is required");
     this.batchPayloadPublisher =
@@ -57,6 +61,30 @@ public class TransactionManagerImpl implements TransactionManager {
     this.resendManager = Objects.requireNonNull(resendManager, "resendManager is required");
     this.privacyHelper = Objects.requireNonNull(privacyHelper, "privacyHelper is required");
     this.payloadDigest = Objects.requireNonNull(payloadDigest, "payloadDigest is required");
+    this.extendedPrivacyPublisher = extendedPrivacyPublisher;
+  }
+
+  public ExtendedPrivacyResponse performExtendedPrivacy(ExtendedPrivacyRequest request) {
+
+    /*LOG*/System.out.println(">>> [TransactionManagerImpl] performExtendedPrivacy()");
+
+    byte[] protocolId = request.getProtocolId();
+    int port = request.getPort();
+    byte[] pmt = request.getPmt();
+    List<PublicKey> recipients = request.getRecipientList();
+    /*LOG*/System.out.println("RECIPIENTS");
+    for(PublicKey key : recipients) {
+      /*LOG*/System.out.println(key.toString());
+    }
+
+    // TODO: fix recipients.get(0)
+    this.extendedPrivacyPublisher.publishExtendedPrivacy(protocolId, port, pmt, recipients.get(0));
+    /*LOG*/System.out.println("PUBLISHED");
+
+    return ExtendedPrivacyResponse.Builder.create()
+        .withPmt(pmt)
+        .build(); 
+
   }
 
   @Override

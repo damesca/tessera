@@ -7,7 +7,7 @@ import java.util.List;
 
 @XmlRootElement
 public class EnclaveRawPayload {
-
+  
   @XmlMimeType("base64Binary")
   private byte[] encryptedPayload;
 

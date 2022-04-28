@@ -24,6 +24,7 @@ module tessera.partyinfo.jaxrs {
   exports com.quorum.tessera.p2p.resend;
   exports com.quorum.tessera.p2p.partyinfo;
   exports com.quorum.tessera.p2p.recovery;
+  exports com.quorum.tessera.p2p.extendedPrivacy;
 
   opens com.quorum.tessera.p2p.recovery;
   //  to
@@ -35,6 +36,8 @@ module tessera.partyinfo.jaxrs {
   //      org.eclipse.persistence.moxy,
   //      org.eclipse.persistence.core,
   //      org.hibernate.validator;
+
+  opens com.quorum.tessera.p2p.extendedPrivacy;
 
   uses com.quorum.tessera.p2p.recovery.RecoveryClient;
   uses com.quorum.tessera.p2p.resend.ResendClient;

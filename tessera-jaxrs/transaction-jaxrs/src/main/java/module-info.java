@@ -26,5 +26,7 @@ module tessera.transaction.jaxrs {
   provides com.quorum.tessera.privacygroup.publish.PrivacyGroupPublisher with
       com.quorum.tessera.q2t.internal.PrivacyGroupPublisherProvider;
   provides com.quorum.tessera.privacygroup.publish.BatchPrivacyGroupPublisher with
-      com.quorum.tessera.q2t.internal.BatchPrivacyGroupPublisherProvider;
+      com.quorum.tessera.q2t.internal.BatchPrivacyGroupPublisherProvider; 
+  provides com.quorum.tessera.transaction.publish.ExtendedPrivacyPublisher with
+		com.quorum.tessera.q2t.internal.ExtendedPrivacyPublisherProvider;
 }

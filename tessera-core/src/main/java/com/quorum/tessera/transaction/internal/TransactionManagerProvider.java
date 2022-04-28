@@ -7,6 +7,7 @@ import com.quorum.tessera.enclave.PayloadDigest;
 import com.quorum.tessera.transaction.PrivacyHelper;
 import com.quorum.tessera.transaction.TransactionManager;
 import com.quorum.tessera.transaction.publish.BatchPayloadPublisher;
+import com.quorum.tessera.transaction.publish.ExtendedPrivacyPublisher;
 import com.quorum.tessera.transaction.publish.PayloadPublisher;
 import com.quorum.tessera.transaction.resend.ResendManager;
 import org.slf4j.Logger;
@@ -43,6 +44,10 @@ public class TransactionManagerProvider {
     final PrivacyHelper privacyHelper = PrivacyHelper.create();
     LOGGER.debug("Created PrivacyHelper {}", privacyHelper);
 
+    LOGGER.debug("Creating ExtendedPrivacyPublisher");
+    final ExtendedPrivacyPublisher extendedPrivacyPublisher = ExtendedPrivacyPublisher.create();
+    LOGGER.debug("Created ExtendedPrivacyPublisher {}", extendedPrivacyPublisher);
+
     int resendBatchSize = 100;
     LOGGER.debug("Creating PayloadDigest");
     final PayloadDigest messageHashFactory = PayloadDigest.create();
@@ -56,6 +61,7 @@ public class TransactionManagerProvider {
             resendManager,
             batchPayloadPublisher,
             privacyHelper,
-            messageHashFactory));
+            messageHashFactory,
+            extendedPrivacyPublisher));
   }
 }

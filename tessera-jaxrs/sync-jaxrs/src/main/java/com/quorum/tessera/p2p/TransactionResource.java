@@ -8,6 +8,7 @@ import com.quorum.tessera.data.MessageHash;
 import com.quorum.tessera.enclave.EncodedPayloadCodec;
 import com.quorum.tessera.enclave.PayloadEncoder;
 import com.quorum.tessera.encryption.PublicKey;
+import com.quorum.tessera.p2p.extendedPrivacy.ExtendedPrivacyRequest;
 import com.quorum.tessera.p2p.recovery.ResendBatchRequest;
 import com.quorum.tessera.p2p.resend.ResendRequest;
 import com.quorum.tessera.recovery.resend.ResendBatchResponse;
@@ -205,4 +206,45 @@ public class TransactionResource {
     // TODO: Return the query url not the string of the messageHash
     return Response.status(Response.Status.CREATED).entity(Objects.toString(messageHash)).build();
   }
+
+  @Operation(
+      summary = "/extendedPrivacy",
+      operationId = "extendedPrivacy",
+      description = "perform extended privacy protocol")
+  @ApiResponse(
+      responseCode = "201",
+      description = "protocol correctly performed",
+      content =
+          @Content(
+              mediaType = TEXT_PLAIN,
+              schema =
+                  @Schema(
+                      description = "hash of encrypted payload",
+                      type = "string",
+                      format = "base64")))
+  @ApiResponse(
+      responseCode = "403",
+      description =
+          "the protocol cannot be correctly executed")
+    @POST
+    @Path("extendedPrivacy")
+    @Consumes(APPLICATION_JSON)
+    public Response extendedPrivacy(final ExtendedPrivacyRequest request) {
+
+        /*LOG*/System.out.println(">>> [TransactionResource] extendedPrivacy()");
+
+        // Receive the /extendedPrivacy request from another Tessera node
+        String protocolId = request.getProtocolId();
+        Integer port = request.getPort();
+        String pmt = request.getPmt();
+        
+        // TODO: Connect to socket and perform the private protocol (PSI)
+        // ...
+        /*LOG*/System.out.println(">>> [TransactionResource] PsiClient connecting to server...");
+        String result = "0x0000000000000000000000000000000000000000000000000000000000000003";
+
+        // TODO: Save result on database?
+
+        return Response.status(Response.Status.CREATED).entity(pmt).build();
+    }
 }

@@ -10,6 +10,8 @@ import java.util.Set;
 
 public interface TransactionManager {
 
+  ExtendedPrivacyResponse performExtendedPrivacy(ExtendedPrivacyRequest request);
+
   SendResponse send(SendRequest sendRequest);
 
   SendResponse sendSignedTransaction(SendSignedRequest sendRequest);

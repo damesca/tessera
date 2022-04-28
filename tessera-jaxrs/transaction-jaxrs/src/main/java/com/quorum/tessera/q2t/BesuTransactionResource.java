@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Predicate;
@@ -202,6 +203,60 @@ public class BesuTransactionResource {
     return Response.status(Response.Status.OK)
         .type(APPLICATION_JSON)
         .entity(receiveResponse)
+        .build();
+  }
+
+  @POST
+  @Path("/extendedPrivacy")
+  @Consumes(APPLICATION_JSON)
+  @Produces(APPLICATION_JSON)
+  public Response extendedPrivacy(@Valid final ExtendedPrivacyRequest request) {
+
+    /*LOG*/System.out.println(">>> [BesuTransactionResource] extendedPrivacy()");
+
+    // Get request params
+    byte[] protocolId = request.getProtocolId();
+    byte[] privateArgs = request.getPrivateArgs();
+    byte[] pmt = request.getPmt();
+    String[] recipients = request.getRecipients();
+
+    List<PublicKey> recipientList = new ArrayList<PublicKey>();
+    for(String recipient : recipients){
+        recipientList.add(PublicKey.from(base64Decoder.decode(recipient.getBytes())));
+    }
+
+    // TODO: branch for the protocolId
+    // TODO: handle P2P connection with the other Tessera node
+    /*
+    com.quorum.tessera.transaction.ExtendedPrivacyRequest extendedPrivacyRequest = 
+        com.quorum.tessera.transaction.ExtendedPrivacyRequest.Builder.create()
+            .withProtocolId(protocolId)
+            .withPort(new Integer(666))
+            .withPmt(pmt)
+            .withRecipientList(recipientList)
+            .build();
+    com.quorum.tessera.transaction.ExtendedPrivacyResponse response =
+        transactionManager.performExtendedPrivacy(extendedPrivacyRequest);
+    */
+    // Deploy a new Server to connect
+    /*LOG*/System.out.println(">>> [BesuTransactionResource] PsiServer waiting for connection...");
+    //PsiServer server = new PsiServer(666, pmt);
+    //server.waitForConnection();
+    //String result = server.getResult();
+    // TODO: avoid hardcoded
+    //String result = "0x0000000000000000000000000000000000000000000000000000000000000002";
+    byte[] result = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02};
+
+    // Send Response back
+    ExtendedPrivacyResponse privacyResponse = new ExtendedPrivacyResponse();
+    privacyResponse.setResult(result);
+    /*LOG*/System.out.println(" >>> [BesuTransactionResource] response created");
+
+    return Response.status(Response.Status.OK)
+        .type(APPLICATION_JSON)
+        .entity(privacyResponse)
         .build();
   }
 }

@@ -16,6 +16,7 @@ module tessera.transaction {
   exports com.quorum.tessera.privacygroup.publish;
 
   uses com.quorum.tessera.transaction.publish.PayloadPublisher;
+  uses com.quorum.tessera.transaction.publish.ExtendedPrivacyPublisher;
   uses com.quorum.tessera.transaction.TransactionManager;
   uses com.quorum.tessera.transaction.publish.BatchPayloadPublisher;
   uses com.quorum.tessera.transaction.EncodedPayloadManager;
