@@ -2,6 +2,8 @@ package com.quorum.tessera.transaction.internal;
 
 import static java.util.function.Predicate.not;
 
+import java.nio.charset.StandardCharsets;
+
 import com.quorum.tessera.data.*;
 import com.quorum.tessera.enclave.*;
 import com.quorum.tessera.enclave.PayloadDigest;
@@ -29,6 +31,8 @@ public class TransactionManagerImpl implements TransactionManager {
 
   private final EncryptedRawTransactionDAO encryptedRawTransactionDAO;
 
+  private final ExtendedPrivacyDAO extendedPrivacyDAO;
+
   private final BatchPayloadPublisher batchPayloadPublisher;
 
   private final Enclave enclave;
@@ -45,6 +49,7 @@ public class TransactionManagerImpl implements TransactionManager {
       Enclave enclave,
       EncryptedTransactionDAO encryptedTransactionDAO,
       EncryptedRawTransactionDAO encryptedRawTransactionDAO,
+      ExtendedPrivacyDAO extendedPrivacyDAO,
       ResendManager resendManager,
       BatchPayloadPublisher batchPayloadPublisher,
       PrivacyHelper privacyHelper,
@@ -62,6 +67,7 @@ public class TransactionManagerImpl implements TransactionManager {
     this.privacyHelper = Objects.requireNonNull(privacyHelper, "privacyHelper is required");
     this.payloadDigest = Objects.requireNonNull(payloadDigest, "payloadDigest is required");
     this.extendedPrivacyPublisher = extendedPrivacyPublisher;
+    this.extendedPrivacyDAO = extendedPrivacyDAO;
   }
 
   public ExtendedPrivacyResponse performExtendedPrivacy(ExtendedPrivacyRequest request) {
@@ -85,6 +91,30 @@ public class TransactionManagerImpl implements TransactionManager {
         .withPmt(pmt)
         .build(); 
 
+  }
+
+  @Override
+  public boolean storePrivateArguments(byte[] key, byte[] privateArgs) {
+    Optional<ExtendedPrivacyEntity> entity = this.extendedPrivacyDAO.retrieve(new String(key, StandardCharsets.UTF_8));
+    if(!entity.isPresent()){
+      this.extendedPrivacyDAO.save(new ExtendedPrivacyEntity(new String(key, StandardCharsets.UTF_8), privateArgs));
+      /*LOG*/System.out.println(" >>> [TransactionManagerImpl] save(key, privateArgs)");
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  @Override
+  public byte[] retrievePrivateArguments(byte[] key) {
+    Optional<ExtendedPrivacyEntity> entity = this.extendedPrivacyDAO.retrieve(new String(key, StandardCharsets.UTF_8));
+    /*LOG*/System.out.println(">>> [TransactionManagerImpl] retrieve(key)");
+    if(entity.isPresent()) {
+      return entity.get().getData();
+    } else {
+      byte[] res = {0x00};
+      return res;
+    }
   }
 
   @Override

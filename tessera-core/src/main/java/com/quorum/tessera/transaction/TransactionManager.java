@@ -12,6 +12,10 @@ public interface TransactionManager {
 
   ExtendedPrivacyResponse performExtendedPrivacy(ExtendedPrivacyRequest request);
 
+  boolean storePrivateArguments(byte[] key, byte[] privateArgs);
+
+  byte[] retrievePrivateArguments(byte[] key);
+
   SendResponse send(SendRequest sendRequest);
 
   SendResponse sendSignedTransaction(SendSignedRequest sendRequest);

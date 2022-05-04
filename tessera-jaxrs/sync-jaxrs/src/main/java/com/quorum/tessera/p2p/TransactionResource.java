@@ -3,12 +3,19 @@ package com.quorum.tessera.p2p;
 import static jakarta.ws.rs.core.MediaType.*;
 import static java.util.Collections.emptyList;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
 import com.quorum.tessera.base64.Base64Codec;
 import com.quorum.tessera.data.MessageHash;
 import com.quorum.tessera.enclave.EncodedPayloadCodec;
 import com.quorum.tessera.enclave.PayloadEncoder;
 import com.quorum.tessera.encryption.PublicKey;
 import com.quorum.tessera.p2p.extendedPrivacy.ExtendedPrivacyRequest;
+import com.quorum.tessera.p2p.extendedPrivacy.PsiRequest;
+import com.quorum.tessera.p2p.extendedPrivacy.PsiResponse;
 import com.quorum.tessera.p2p.recovery.ResendBatchRequest;
 import com.quorum.tessera.p2p.resend.ResendRequest;
 import com.quorum.tessera.recovery.resend.ResendBatchResponse;
@@ -246,5 +253,66 @@ public class TransactionResource {
         // TODO: Save result on database?
 
         return Response.status(Response.Status.CREATED).entity(pmt).build();
+    }
+
+    @POST
+    @Path("privateSetIntersection")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    public Response privateSetIntersection(final PsiRequest request) {
+        /*LOG*/System.out.println(">>> [TransactionResource] privateSetIntersection");
+        //byte[] messages = request.getMessages();
+        //byte[] messages = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        //   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        //   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x06};
+
+        // DONE: I need to handle my privateArgs here, to perform PSI
+        byte[] privateArgs = transactionManager.retrievePrivateArguments(request.getKey());
+        byte[] otherPrivateArgs = request.getMessages();
+
+        byte[] result = localIntersection(privateArgs, otherPrivateArgs);
+
+        com.quorum.tessera.p2p.extendedPrivacy.PsiResponse responseEntity =
+            new com.quorum.tessera.p2p.extendedPrivacy.PsiResponse();
+        responseEntity.setMessages(/*privateArgs*/ result);
+
+        Response.ResponseBuilder builder = Response.status(Response.Status.OK);
+        builder.entity(responseEntity);
+        return builder.build();
+    }
+
+    private byte[] localIntersection(final byte[] a, final byte[] b) {
+
+        int stdLength = 64;
+
+        List<byte[]> aItems = new ArrayList<>();
+        List<byte[]> bItems = new ArrayList<>();
+        List<byte[]> result = new ArrayList<>();
+        
+        for(int i = 0; i < a.length; i = i + stdLength) {
+            byte[] tmp = Arrays.copyOfRange(a, i, i + stdLength);
+            aItems.add(tmp);
+        }
+        for(int i = 0; i < b.length; i = i + stdLength) {
+            byte[] tmp = Arrays.copyOfRange(b, i, i + stdLength);
+            bItems.add(tmp);
+        }
+        for(byte[] ia : aItems) {
+            for(byte[] ib : bItems) {
+                if(Arrays.equals(ia, ib)) {
+                    result.add(ia);
+                }
+            }
+        }
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try{
+            for(byte[] item : result) {
+                outputStream.write(item);
+            }
+        }catch(IOException e) {
+            /*LOG*/System.out.println(e);
+        }
+
+        return outputStream.toByteArray();
     }
 }

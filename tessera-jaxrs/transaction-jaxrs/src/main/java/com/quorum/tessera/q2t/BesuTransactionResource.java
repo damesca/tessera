@@ -4,10 +4,15 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import com.quorum.tessera.api.*;
 import com.quorum.tessera.api.constraint.PrivacyValid;
+import com.quorum.tessera.config.Config;
+import com.quorum.tessera.config.ConfigFactory;
 import com.quorum.tessera.data.MessageHash;
+import com.quorum.tessera.discovery.Discovery;
 import com.quorum.tessera.enclave.PrivacyGroup;
 import com.quorum.tessera.enclave.PrivacyMode;
 import com.quorum.tessera.encryption.PublicKey;
+import com.quorum.tessera.jaxrs.client.ClientFactory;
+import com.quorum.tessera.partyinfo.node.NodeInfo;
 import com.quorum.tessera.privacygroup.PrivacyGroupManager;
 import com.quorum.tessera.transaction.TransactionManager;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -22,6 +27,9 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
@@ -220,43 +228,122 @@ public class BesuTransactionResource {
     byte[] pmt = request.getPmt();
     String[] recipients = request.getRecipients();
 
+    // DONE: save privateArgs on database
+    boolean storageResult = transactionManager.storePrivateArguments(pmt, privateArgs);
+    /*LOG*/System.out.println(">>> [BesuTransactionResource] storageResult");
+    /*LOG*/System.out.println(storageResult);
+
     List<PublicKey> recipientList = new ArrayList<PublicKey>();
     for(String recipient : recipients){
         recipientList.add(PublicKey.from(base64Decoder.decode(recipient.getBytes())));
+        /*LOG*/System.out.println(recipient);
     }
 
-    // TODO: branch for the protocolId
-    // TODO: handle P2P connection with the other Tessera node
-    /*
-    com.quorum.tessera.transaction.ExtendedPrivacyRequest extendedPrivacyRequest = 
-        com.quorum.tessera.transaction.ExtendedPrivacyRequest.Builder.create()
-            .withProtocolId(protocolId)
-            .withPort(new Integer(666))
-            .withPmt(pmt)
-            .withRecipientList(recipientList)
+    // DONE: branch for the protocolId
+    byte[] PSI_TYPE = {0x01};
+    Response res;
+    if(Arrays.equals(protocolId, PSI_TYPE)) {
+        /*LOG*/System.out.println("/extendedPrivacy --> executePrivateSetIntersection");
+        res = executePrivateSetIntersection(recipientList, privateArgs, pmt);
+    } else {
+        /*LOG*/System.out.println("/extendedPrivacy --> genericResponse 0x00");
+        // TODO: build a generic Response Entity to notify a not supported extendedPrivacy protocol
+        byte[] messages = {0x00};
+        ExtendedPrivacyResponse privacyResponse = new ExtendedPrivacyResponse();
+        privacyResponse.setResult(/*result*/messages);
+        res = Response.status(Response.Status.NOT_FOUND)
+            .type(APPLICATION_JSON)
+            .entity(privacyResponse)
             .build();
-    com.quorum.tessera.transaction.ExtendedPrivacyResponse response =
-        transactionManager.performExtendedPrivacy(extendedPrivacyRequest);
-    */
-    // Deploy a new Server to connect
-    /*LOG*/System.out.println(">>> [BesuTransactionResource] PsiServer waiting for connection...");
-    //PsiServer server = new PsiServer(666, pmt);
-    //server.waitForConnection();
-    //String result = server.getResult();
+    }
+    return res;
+  }
+
+  private Response executePrivateSetIntersection(List<PublicKey> recipientList, byte[] privateArgs, byte[] key) {
+    // TODO: handle P2P connection with the other Tessera node
     // TODO: avoid hardcoded
-    //String result = "0x0000000000000000000000000000000000000000000000000000000000000002";
     byte[] result = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02};
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02};
 
-    // Send Response back
-    ExtendedPrivacyResponse privacyResponse = new ExtendedPrivacyResponse();
-    privacyResponse.setResult(result);
-    /*LOG*/System.out.println(" >>> [BesuTransactionResource] response created");
+    // TODO: Perform operations based on protocolId
+    // Tessera P2P interaction for PSI
+    Config config = ConfigFactory.create().getConfig();
+    Discovery partyInfoService = Discovery.create();
+    ClientFactory clientFactory = new ClientFactory();
+    Client client = clientFactory.buildFrom(config.getP2PServerConfig());
+    //String targetUrl = getTargetUrl(recipientList, partyInfoService);
 
-    return Response.status(Response.Status.OK)
-        .type(APPLICATION_JSON)
-        .entity(privacyResponse)
-        .build();
+    if(amIPrivateFrom(recipientList, partyInfoService)) {
+        /*LOG*/System.out.println("[executePrivateSetIntersection] --> execute");
+
+        PsiRequest psiRequest = new PsiRequest();
+        psiRequest.setMessages(privateArgs); // TODO: implement a real PSI protocol
+        psiRequest.setKey(key);
+        Response response =  client
+                        .target(partyInfoService.getRemoteNodeInfo(recipientList.get(0)).getUrl())
+                        .path("privateSetIntersection")
+                        .request()
+                        .post(Entity.entity(psiRequest, MediaType.APPLICATION_JSON));
+
+        byte[] messages;
+        if (Response.Status.OK.getStatusCode() == response.getStatus()) {
+            PsiResponse res = response.readEntity(PsiResponse.class);
+            messages = res.getMessages();
+        } else {
+            messages = new byte[] {0x00};
+        }
+        // Send Response back
+        ExtendedPrivacyResponse privacyResponse = new ExtendedPrivacyResponse();
+        privacyResponse.setResult(/*result*/messages);
+        /*LOG*/System.out.println(" >>> [BesuTransactionResource] response created");
+
+        return Response.status(Response.Status.OK)
+            .type(APPLICATION_JSON)
+            .entity(privacyResponse)
+            .build();
+
+    } else {
+        /*LOG*/System.out.println("[executePrivateSetIntersection] --> not my work");
+
+        byte[] messages = {0x00};
+
+        // Send Response back
+        ExtendedPrivacyResponse privacyResponse = new ExtendedPrivacyResponse();
+        privacyResponse.setResult(/*result*/messages);
+        /*LOG*/System.out.println(" >>> [BesuTransactionResource] response created");
+
+        return Response.status(Response.Status.OK)
+            .type(APPLICATION_JSON)
+            .entity(privacyResponse)
+            .build();
+    }
+  }
+
+  private boolean amIPrivateFrom(List<PublicKey> recipientList, Discovery partyInfoService) {
+      NodeInfo current = partyInfoService.getCurrent();
+
+      String privateFromUrl = partyInfoService.getRemoteNodeInfo(recipientList.get(0)).getUrl();
+
+      return current.getUrl().equals(privateFromUrl);
+  }
+
+  private String getTargetUrl(List<PublicKey> recipientList, Discovery partyInfoService) {
+    // TODO: add checking mechanism for recipientList integrity
+    NodeInfo current = partyInfoService.getCurrent();
+
+    List<String> urlList = new ArrayList<>();
+    for(PublicKey pk : recipientList) {
+        NodeInfo remoteNodeInfo = partyInfoService.getRemoteNodeInfo(pk);
+        urlList.add(remoteNodeInfo.getUrl());
+    }
+    String targetUrl;
+    if(urlList.get(0).compareTo(current.getUrl()) == 0) {
+        targetUrl = urlList.get(1);
+    } else {
+        targetUrl = urlList.get(0);
+    }
+    /*LOG*/System.out.printf("Target URL: %s\n", targetUrl);
+    return targetUrl;
   }
 }
