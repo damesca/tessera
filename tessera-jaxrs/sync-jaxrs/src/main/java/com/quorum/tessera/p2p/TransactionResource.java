@@ -283,7 +283,17 @@ public class TransactionResource {
 
     private byte[] localIntersection(final byte[] a, final byte[] b) {
 
-        int stdLength = 64;
+        /*LOG*/System.out.println(">>> [TransactionResource] localIntersection");
+        for(byte value : a) {
+            /*LOG*/System.out.print(String.format("%02X", value) + " ");
+        }
+        /*LOG*/System.out.println("------");
+        for(byte val : b) {
+            /*LOG*/System.out.print(String.format("%02X", val) + " ");
+        }
+        /*LOG*/System.out.println("------");
+
+        int stdLength = 32;
 
         List<byte[]> aItems = new ArrayList<>();
         List<byte[]> bItems = new ArrayList<>();
@@ -300,14 +310,22 @@ public class TransactionResource {
         for(byte[] ia : aItems) {
             for(byte[] ib : bItems) {
                 if(Arrays.equals(ia, ib)) {
+                    /*LOG*/System.out.println("equals");
                     result.add(ia);
+                }else{
+                    /*LOG*/System.out.println("not-equals");
                 }
             }
         }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try{
+            /*LOG*/System.out.println(" -- RESULT --");
             for(byte[] item : result) {
                 outputStream.write(item);
+                /*LOG*/System.out.println("# ITEM #");
+                for(byte element : item){
+                    /*LOG*/System.out.print((int)element);
+                }
             }
         }catch(IOException e) {
             /*LOG*/System.out.println(e);

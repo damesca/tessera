@@ -228,6 +228,12 @@ public class BesuTransactionResource {
     byte[] pmt = request.getPmt();
     String[] recipients = request.getRecipients();
 
+    /*LOG*/System.out.println(" >>> PrivateArgs");
+    for(byte b : privateArgs) {
+        /*LOG*/System.out.print((int)b);
+    }
+    /*LOG*/System.out.println("----");
+
     // DONE: save privateArgs on database
     boolean storageResult = transactionManager.storePrivateArguments(pmt, privateArgs);
     /*LOG*/System.out.println(">>> [BesuTransactionResource] storageResult");
@@ -276,12 +282,17 @@ public class BesuTransactionResource {
 
     if(amIPrivateFrom(recipientList, partyInfoService)) {
         /*LOG*/System.out.println("[executePrivateSetIntersection] --> execute");
+        /*LOG*/System.out.println("RECIPIENT LIST");
+        for(int i = 0; i < recipientList.size(); i++) {
+            /*LOG*/System.out.println(partyInfoService.getRemoteNodeInfo(recipientList.get(i)).getUrl());
+        }
 
         PsiRequest psiRequest = new PsiRequest();
         psiRequest.setMessages(privateArgs); // TODO: implement a real PSI protocol
         psiRequest.setKey(key);
+        // recipientList.get(1) is not privateFrom, and it must be so to avoid a self-calling
         Response response =  client
-                        .target(partyInfoService.getRemoteNodeInfo(recipientList.get(0)).getUrl())
+                        .target(partyInfoService.getRemoteNodeInfo(recipientList.get(1)).getUrl())
                         .path("privateSetIntersection")
                         .request()
                         .post(Entity.entity(psiRequest, MediaType.APPLICATION_JSON));
